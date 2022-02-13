@@ -9,6 +9,13 @@ class IrSequence(models.Model):
 
     _inherit = "ir.sequence"
 
+    range_date_selection = fields.Selection(
+        selection_add=[
+            ("ir_sequence_date_range_end", "To"),
+        ],
+        ondelete={"ir_sequence_date_range_end": "cascade"},
+    )
+
     def _interpolation_dict(self, date=None, date_range=None):
         res = super(IrSequence, self)._interpolation_dict(
             date=date, date_range=date_range

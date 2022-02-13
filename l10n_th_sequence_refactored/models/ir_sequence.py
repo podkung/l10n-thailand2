@@ -13,6 +13,12 @@ class IrSequence(models.Model):
     """
 
     _inherit = "ir.sequence"
+    
+    range_date_selection = fields.Selection(
+        selection=[("ir_sequence_date_range", "From")],
+        default="ir_sequence_date_range",
+        string="Range Year Selection",
+    )
 
     def _interpolation_dict(self, date=None, date_range=None):
         """
@@ -27,7 +33,7 @@ class IrSequence(models.Model):
             )
         if date_range or self._context.get("ir_sequence_date_range"):
             range_date = fields.Datetime.from_string(
-                date_range or self._context.get("ir_sequence_date_range")
+                date_range or self._context.get(self.range_date_selection)
             )
 
         sequences = {
@@ -56,6 +62,7 @@ class IrSequence(models.Model):
         Override the `_get_prefix_suffix()`. This utilizes the private
         `_interpolation_dict()` instead of an inner function.
         """
+        self.ensure_one()
         d = self._interpolation_dict(date=date, date_range=date_range)
 
         try:
