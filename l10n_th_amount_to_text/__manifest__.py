@@ -10,7 +10,7 @@
     "category": "Localization",
     "summary": "Convert Amount Text to Thai",
     "depends": ["base"],
-    "external_dependencies": {"python": ["num2words>=0.5.7"]},
+    "external_dependencies": {"python": ["num2words"]},
     "data": [],
     "installable": True,
     "development_status": "Production/Stable",
