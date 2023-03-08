@@ -9,11 +9,13 @@
     "website": "https://github.com/OCA/l10n-thailand",
     "category": "Localization / Human Resources",
     "depends": [
-        "hr_expense",
+        "hr_expense_advance_clearing",
         "l10n_th_gov_purchase_request",
     ],
     "data": [
+        "security/ir.model.access.csv",
         "views/hr_expense_views.xml",
+        "views/purchase_request_views.xml",
     ],
     "installable": True,
     "development_status": "Alpha",
