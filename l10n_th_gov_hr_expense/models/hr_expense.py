@@ -1,6 +1,8 @@
 # Copyright 2023 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
+from dateutil.relativedelta import relativedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
@@ -36,6 +38,30 @@ class HrExpense(models.Model):
 class HrExpenseSheet(models.Model):
     _inherit = "hr.expense.sheet"
 
+    date_return = fields.Date(
+        string="Returned Date",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    clearing_term = fields.Selection(
+        selection=[
+            ("thirty_days_after_receive", "30 days after receiving the money"),
+            ("thirty_days_after_return", "30 days after returning to the office"),
+        ],
+        default="thirty_days_after_receive",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    clearing_date_due = fields.Date(
+        string="Clearing Due Date",
+        compute="_compute_clearing_date_due",
+        store=True,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     employee_user_id = fields.Many2one(
         related="employee_id.user_id",
         readonly=True,
@@ -70,6 +96,36 @@ class HrExpenseSheet(models.Model):
         groups="hr_expense.group_hr_expense_manager",
         copy=False,
     )
+
+    @api.depends("advance", "clearing_term", "date_return", "account_move_id", "state")
+    def _compute_clearing_date_due(self):
+        for rec in self:
+            if not rec.advance:
+                rec.clearing_date_due = False
+                continue
+
+            if rec.clearing_term == "thirty_days_after_return" and rec.date_return:
+                rec.clearing_date_due = rec.date_return + relativedelta(days=29)
+            elif (
+                rec.clearing_term == "thirty_days_after_receive"
+                and rec.state == "done"
+                and rec.account_move_id
+            ):
+                # Find payment date
+                payment_date = False
+                payable_lines = rec.account_move_id.line_ids.filtered(
+                    lambda l: l.account_id.user_type_id.type == "payable"
+                )
+                payment_lines = payable_lines.mapped(
+                    "full_reconcile_id.reconciled_line_ids"
+                ).filtered(lambda l: l.move_id != rec.account_move_id)
+                if payment_lines:
+                    payment_date = payment_lines[0].date
+                # Assign clearing due date
+                if payment_date:
+                    rec.clearing_date_due = payment_date + relativedelta(days=29)
+            else:
+                rec.clearing_date_due = False
 
     @api.depends("advance")
     def _compute_pr_for(self):
