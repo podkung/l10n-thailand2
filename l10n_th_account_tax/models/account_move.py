@@ -143,13 +143,21 @@ class AccountMoveLine(models.Model):
             )
             if is_tax_invoice or line.manual_tax_invoice:
                 tax_base_amount = line._get_tax_base_amount(sign, vals_list)
+                # For case customer invoice, customer credit note
+                # it default value in tax invoice
+                default_tax_invoice = line.move_id.move_type in [
+                    "out_invoice",
+                    "out_refund",
+                ]
                 taxinv = TaxInvoice.create(
                     {
                         "move_id": line.move_id.id,
                         "move_line_id": line.id,
                         "partner_id": line.partner_id.id,
-                        "tax_invoice_number": sign < 0 and "/" or False,
-                        "tax_invoice_date": sign < 0 and fields.Date.today() or False,
+                        "tax_invoice_number": default_tax_invoice and "/" or False,
+                        "tax_invoice_date": default_tax_invoice
+                        and fields.Date.today()
+                        or False,
                         "tax_base_amount": tax_base_amount,
                         "balance": sign * abs(line.balance),
                         "reversed_id": (
@@ -163,17 +171,17 @@ class AccountMoveLine(models.Model):
             # Assign back the reversing id
             for taxinv in line.tax_invoice_ids.filtered("reversed_id"):
                 # case not clear tax, original move must auto posted.
-                origin_move = taxinv.reversed_id
-                if origin_move.state == "draft":
-                    origin_move.tax_invoice_ids.write(
-                        {
-                            "tax_invoice_number": sign < 0 and "/" or False,
-                            "tax_invoice_date": sign < 0
-                            and fields.Date.today()
-                            or False,
-                        }
-                    )
-                    origin_move.action_post()
+                # origin_move = taxinv.reversed_id
+                # if origin_move.state == "draft":
+                #     origin_move.tax_invoice_ids.write(
+                #         {
+                #             "tax_invoice_number": sign < 0 and "/" or False,
+                #             "tax_invoice_date": sign < 0
+                #             and fields.Date.today()
+                #             or False,
+                #         }
+                #     )
+                #     origin_move.action_post()
                 TaxInvoice.search([("move_id", "=", taxinv.reversed_id.id)]).write(
                     {"reversing_id": taxinv.move_id.id}
                 )
