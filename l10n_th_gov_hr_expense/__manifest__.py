@@ -14,6 +14,7 @@
     ],
     "data": [
         "security/ir.model.access.csv",
+        "views/account_move_views.xml",
         "views/hr_expense_views.xml",
         "views/purchase_request_views.xml",
     ],
