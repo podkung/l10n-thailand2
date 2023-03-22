@@ -1,0 +1,16 @@
+<odoo>
+    <record id="action_purchase_report_xlsx" model="ir.actions.report">
+        <field name="name">Purchase Report XLSX</field>
+        <field name="model">report.purchase.report</field>
+        <field name="report_type">xlsx</field>
+        <field name="report_name">gov_purchase_report_xlsx</field>
+        <field name="report_file">Purchase Report</field>
+    </record>
+    <record id="action_non_purchase_report_xlsx" model="ir.actions.report">
+        <field name="name">Non Purchase Report XLSX</field>
+        <field name="model">report.non.purchase.report</field>
+        <field name="report_type">xlsx</field>
+        <field name="report_name">gov_no_purchase_report_xlsx</field>
+        <field name="report_file">Non Purchase Report</field>
+    </record>
+</odoo>
