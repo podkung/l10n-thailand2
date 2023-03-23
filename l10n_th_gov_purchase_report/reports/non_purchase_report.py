@@ -23,16 +23,10 @@ class NonPurchaseReport(models.TransientModel):
         help="Use compute fields, so there is nothing store in database",
     )
 
-    def _get_expense_purchase_type(self):
-        c79_2 = self.env.ref("l10n_th_gov_purchase_request.purchase_type_003")
-        w119 = self.env.ref("l10n_th_gov_purchase_request.purchase_type_004")
-        return c79_2 + w119
-
     def _compute_results(self):
         self.ensure_one()
-        purchase_type = self._get_expense_purchase_type()
         dom = [
-            ("purchase_type_id", "in", purchase_type.ids),
+            ("purchase_type_id", "!=", False),
             ("sheet_id.state", "in", ["post", "done"]),
         ]
         # Filter report by accounting date
