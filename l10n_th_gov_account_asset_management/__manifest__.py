@@ -3,7 +3,7 @@
 
 {
     "name": "Thai Localization - Government Assets Management",
-    "version": "15.0.1.0.0",
+    "version": "15.0.2.0.0",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/l10n-thailand",
     "license": "AGPL-3",
@@ -17,6 +17,7 @@
         "data/ir_actions_server_data.xml",
         "views/account_asset_views.xml",
         "wizard/account_asset_remove.xml",
+        "views/res_config_settings_views.xml",
     ],
     "installable": True,
     "development_status": "Alpha",
