@@ -55,12 +55,8 @@ class HrExpenseSheet(models.Model):
         states={"draft": [("readonly", False)]},
     )
     clearing_date_due = fields.Date(
-        string="Clearing Due Date",
         compute="_compute_clearing_date_due",
         store=True,
-        tracking=True,
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     employee_user_id = fields.Many2one(
         related="employee_id.user_id",
@@ -97,35 +93,43 @@ class HrExpenseSheet(models.Model):
         copy=False,
     )
 
-    @api.depends("advance", "clearing_term", "date_return", "account_move_id", "state")
+    @api.depends("advance", "clearing_term", "date_return", "state")
     def _compute_clearing_date_due(self):
-        for rec in self:
-            if not rec.advance:
-                rec.clearing_date_due = False
-                continue
-
-            if rec.clearing_term == "thirty_days_after_return" and rec.date_return:
-                rec.clearing_date_due = rec.date_return + relativedelta(days=29)
+        """For advance, you can select clearing term for compute clearing date
+        - 30 days after receiving the money:
+            it will compute clearing date due when accounting payment
+        - 30 days after returning to the office:
+            it will compute clearing date due when select Returned Date
+        """
+        for sheet in self:
+            sheet.clearing_date_due = False
+            if sheet.clearing_term == "thirty_days_after_return" and sheet.date_return:
+                sheet.clearing_date_due = sheet.date_return + relativedelta(days=29)
             elif (
-                rec.clearing_term == "thirty_days_after_receive"
-                and rec.state == "done"
-                and rec.account_move_id
+                sheet.clearing_term == "thirty_days_after_receive"
+                and sheet.state == "done"
+                and sheet.account_move_id
             ):
                 # Find payment date
-                payment_date = False
-                payable_lines = rec.account_move_id.line_ids.filtered(
+                payable_lines = sheet.account_move_id.line_ids.filtered(
                     lambda l: l.account_id.user_type_id.type == "payable"
                 )
                 payment_lines = payable_lines.mapped(
                     "full_reconcile_id.reconciled_line_ids"
-                ).filtered(lambda l: l.move_id != rec.account_move_id)
-                if payment_lines:
-                    payment_date = payment_lines[0].date
+                ).filtered(lambda l: l.move_id != sheet.account_move_id)
+                payment_date = payment_lines[0].date if payment_lines else False
                 # Assign clearing due date
                 if payment_date:
-                    rec.clearing_date_due = payment_date + relativedelta(days=29)
-            else:
-                rec.clearing_date_due = False
+                    sheet.clearing_date_due = payment_date + relativedelta(days=29)
+
+    def action_sheet_move_create(self):
+        """Remove clearing_date_due when clearing term is 30 Days after receive"""
+        res = super().action_sheet_move_create()
+        for sheet in self.filtered(
+            lambda l: l.advance and l.clearing_term == "thirty_days_after_receive"
+        ):
+            sheet.clearing_date_due = False
+        return res
 
     @api.depends("advance")
     def _compute_pr_for(self):

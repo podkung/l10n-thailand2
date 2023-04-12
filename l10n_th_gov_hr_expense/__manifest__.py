@@ -10,6 +10,7 @@
     "category": "Localization / Human Resources",
     "depends": [
         "hr_expense_advance_clearing",
+        "hr_expense_advance_overdue_reminder",
         "l10n_th_gov_purchase_request",
     ],
     "data": [

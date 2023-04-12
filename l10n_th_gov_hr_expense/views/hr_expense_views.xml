@@ -2,7 +2,10 @@
     <record id="view_hr_expense_sheet_form" model="ir.ui.view">
         <field name="name">hr.expense.sheet.form</field>
         <field name="model">hr.expense.sheet</field>
-        <field name="inherit_id" ref="hr_expense.view_hr_expense_sheet_form" />
+        <field
+            name="inherit_id"
+            ref="hr_expense_advance_overdue_reminder.view_hr_expense_sheet_form"
+        />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='advance_sheet_id']" position="after">
                 <field
@@ -14,10 +17,7 @@
                     widget="radio"
                     attrs="{'invisible': [('advance', '=', False)], 'required': [('advance', '=', True)]}"
                 />
-                <field
-                    name="clearing_date_due"
-                    attrs="{'invisible': [('advance', '=', False)]}"
-                />
+                <field name="clearing_date_due" position="move" />
             </xpath>
             <xpath expr="//field[@name='accounting_date']" position="after">
                 <field name="employee_user_id" invisible="1" />
