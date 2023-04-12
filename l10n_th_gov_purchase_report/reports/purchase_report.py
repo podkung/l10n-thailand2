@@ -1,8 +1,8 @@
 # Copyright 2023 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-
-from odoo import fields, models
+from odoo import _, fields, models
+from odoo.exceptions import UserError
 
 
 class PurchaseReportView(models.TransientModel):
@@ -49,8 +49,7 @@ class PurchaseReport(models.TransientModel):
         )
         return where_domain
 
-    def _compute_results(self):
-        self.ensure_one()
+    def _get_query_purchase_report(self):
         self._cr.execute(
             """
             SELECT *
@@ -89,7 +88,11 @@ class PurchaseReport(models.TransientModel):
                 self._get_where_purchase_report()
             )
         )
-        procurement_report_results = self.env.cr.dictfetchall()
+        return self.env.cr.dictfetchall()
+
+    def _compute_results(self):
+        self.ensure_one()
+        procurement_report_results = self._get_query_purchase_report()
         ReportLine = self.env["purchase.report.view"]
         self.results = False
         previous_id = False
@@ -100,10 +103,17 @@ class PurchaseReport(models.TransientModel):
             previous_id = line["requisition_id"]
             self.results += ReportLine.new(line)
 
+    def _hook_print_report(self):
+        raise UserError(
+            _(
+                "This report support type xlsx only. "
+                "you can implement it at function '_hook_print_report'"
+            )
+        )
+
     def print_report(self, report_type="xlsx"):
         self.ensure_one()
-        if report_type == "xlsx":
-            action = self.env.ref(
-                "l10n_th_gov_purchase_report.action_purchase_report_xlsx"
-            )
-            return action.report_action(self, config=False)
+        if report_type != "xlsx":
+            return self._hook_print_report()
+        action = self.env.ref("l10n_th_gov_purchase_report.action_purchase_report_xlsx")
+        return action.report_action(self, config=False)

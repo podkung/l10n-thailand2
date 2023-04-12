@@ -13,4 +13,11 @@
         <field name="report_name">gov_no_purchase_report_xlsx</field>
         <field name="report_file">Non Purchase Report</field>
     </record>
+    <record id="action_purchase_tracking_report_xlsx" model="ir.actions.report">
+        <field name="name">Purchase Tracking Report XLSX</field>
+        <field name="model">report.purchase.tracking.report</field>
+        <field name="report_type">xlsx</field>
+        <field name="report_name">gov_purchase_tracking_report_xlsx</field>
+        <field name="report_file">Purchase Tracking Report</field>
+    </record>
 </odoo>

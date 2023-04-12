@@ -1,6 +1,8 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_purchase_report_wizard,purchase.report.wizard,model_purchase_report_wizard,,1,1,1,1
-access_report_purchase_report,report.purchase.report,model_report_purchase_report,,1,1,1,1
-access_non_purchase_report_wizard,non.purchase.report.wizard,model_non_purchase_report_wizard,,1,1,1,1
-access_report_non_purchase_report,report.non.purchase.report,model_report_non_purchase_report,,1,1,1,1
-access_purchase_report_view,purchase.report.view,model_purchase_report_view,,1,0,0,0
+access_purchase_report_wizard,access_purchase_report_wizard,model_purchase_report_wizard,,1,1,1,1
+access_report_purchase_report,access_report_purchase_report,model_report_purchase_report,,1,1,1,1
+access_non_purchase_report_wizard,access_non_purchase_report_wizard,model_non_purchase_report_wizard,,1,1,1,1
+access_report_non_purchase_report,access_report_non_purchase_report,model_report_non_purchase_report,,1,1,1,1
+access_purchase_tracking_report_wizard,access_purchase_tracking_report_wizard,model_purchase_tracking_report_wizard,,1,1,1,1
+access_report_purchase_tracking_report,access_report_purchase_tracking_report,model_report_purchase_tracking_report,,1,1,1,1
+access_purchase_report_view,access_purchase_report_view,model_purchase_report_view,,1,0,0,0

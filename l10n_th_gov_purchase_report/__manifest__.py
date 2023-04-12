@@ -23,9 +23,10 @@
     "data": [
         "data/report_data.xml",
         "security/ir.model.access.csv",
-        "wizard/purchase_report_views.xml",
+        "views/purchase_menu.xml",
         "wizard/purchase_report_wizard_view.xml",
         "wizard/non_purchase_report_wizard_view.xml",
+        "wizard/purchase_tracking_report_wizard.xml",
     ],
     "installable": True,
     "maintainers": ["Saran440"],

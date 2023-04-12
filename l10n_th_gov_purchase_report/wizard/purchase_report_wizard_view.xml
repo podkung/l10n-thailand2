@@ -23,6 +23,7 @@
                         string="Export XLSX"
                         type="object"
                         default_focus="1"
+                        context="{'model': 'report.purchase.report'}"
                         class="oe_highlight"
                     />
                     or
@@ -33,7 +34,7 @@
     </record>
 
     <record id="purchase_report_action" model="ir.actions.act_window">
-        <field name="name">Purchase Report</field>
+        <field name="name">Procurement Report</field>
         <field name="res_model">purchase.report.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
@@ -41,7 +42,7 @@
 
     <menuitem
         id="purchase_report_menu"
-        action="purchase_report_action"
+        action="l10n_th_gov_purchase_report.purchase_report_action"
         parent="l10n_th_gov_purchase_report.purchase_reports_l10n_th_menu"
         sequence="10"
         groups="purchase.group_purchase_manager"
