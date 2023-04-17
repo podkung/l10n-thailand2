@@ -52,7 +52,7 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
             },
             "02_pr_name": {
                 "header": {
-                    "value": "เลขที่ขอซื้อขอจ้าง",
+                    "value": "เลขที่ขอซื้อขอจ้าง/PR",
                 },
                 "data": {
                     "value": self._render("pr_name"),
@@ -88,7 +88,7 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
                     "value": self._render("pr_procurement_type"),
                     "format": ctx_format["format_tcell_left"],
                 },
-                "width": 12,
+                "width": 15,
             },
             "06_pr_procurement_method": {
                 "header": {
@@ -108,31 +108,31 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
                     "value": self._render("pr_total_cost"),
                     "format": ctx_format["format_tcell_amount_right"],
                 },
-                "width": 15,
+                "width": 25,
             },
             "08_pr_date_start": {
                 "header": {
-                    "value": "วันที่ขอซื้อขอจ้าง",
+                    "value": "วันที่ขอซื้อขอจ้าง/PR",
                 },
                 "data": {
                     "value": self._render("pr_date_start"),
                     "format": ctx_format["format_tcell_date_right"],
                 },
-                "width": 12,
+                "width": 15,
             },
             "09_te_number": {
                 "header": {
-                    "value": "เลขที่เอกสารการเสนอราคา",
+                    "value": "เลขที่เอกสารการเสนอราคา/TE",
                 },
                 "data": {
                     "value": self._render("te_number"),
                     "format": ctx_format["format_tcell_left"],
                 },
-                "width": 15,
+                "width": 20,
             },
             "10_rfq_number": {
                 "header": {
-                    "value": "เลขที่ใบเสนอราคา",
+                    "value": "เลขที่ใบเสนอราคา/RFQ",
                 },
                 "data": {
                     "value": self._render("rfq_number"),
@@ -142,17 +142,17 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
             },
             "11_rfq_deadline": {
                 "header": {
-                    "value": "วันที่ใบเสนอราคา",
+                    "value": "วันที่ใบเสนอราคา/RFQ",
                 },
                 "data": {
                     "value": self._render("rfq_deadline"),
                     "format": ctx_format["format_tcell_date_right"],
                 },
-                "width": 12,
+                "width": 15,
             },
             "12_po_number": {
                 "header": {
-                    "value": "เลขที่สัญญา",
+                    "value": "เลขที่สัญญา/PO",
                 },
                 "data": {
                     "value": self._render("po_number"),
@@ -162,27 +162,27 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
             },
             "13_po_date_start": {
                 "header": {
-                    "value": "วันที่เริ่มต้นสัญญา",
+                    "value": "วันที่เริ่มต้นสัญญา (PO/Agreement)",
                 },
                 "data": {
                     "value": self._render("po_date_start"),
                     "format": ctx_format["format_tcell_date_right"],
                 },
-                "width": 12,
+                "width": 20,
             },
             "14_po_date_end": {
                 "header": {
-                    "value": "วันที่สิ้นสุดสัญญา",
+                    "value": "วันที่สิ้นสุดสัญญา (PO/Agreement)",
                 },
                 "data": {
                     "value": self._render("po_date_end"),
                     "format": ctx_format["format_tcell_date_right"],
                 },
-                "width": 12,
+                "width": 20,
             },
             "15_po_vendor": {
                 "header": {
-                    "value": "ชื่อผู้รับจ้าง / ผู้ขาย",
+                    "value": "ชื่อผู้รับจ้าง/ผู้ขาย (PO/Agreement)",
                 },
                 "data": {
                     "value": self._render("po_vendor"),
@@ -192,13 +192,13 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
             },
             "16_po_toal": {
                 "header": {
-                    "value": "วงเงินที่ตกลงทำสัญญา",
+                    "value": "วงเงินที่ตกลงทำสัญญา/PO",
                 },
                 "data": {
                     "value": self._render("po_total"),
                     "format": ctx_format["format_tcell_amount_right"],
                 },
-                "width": 15,
+                "width": 18,
             },
             "17_invoice_plan_total": {
                 "header": {
@@ -220,35 +220,35 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
                 },
                 "width": 12,
             },
-            "19_invoice_plan_balance": {
+            "19_invoice_plan_amount": {
                 "header": {
-                    "value": "จำนวนงวดคงเหลือ",
+                    "value": "เงินงวดตามสัญญา",
                 },
                 "data": {
-                    "value": self._render("invoice_plan_balance"),
-                    "format": ctx_format["format_tcell_center"],
+                    "value": self._render("invoice_plan_amount"),
+                    "format": ctx_format["format_tcell_amount_right"],
                 },
                 "width": 12,
             },
             "20_wa_number": {
                 "header": {
-                    "value": "เลขที่ใบตรวจรับ",
+                    "value": "เลขที่ใบตรวจรับ/WA",
                 },
                 "data": {
                     "value": self._render("wa_number"),
                     "format": ctx_format["format_tcell_left"],
                 },
-                "width": 12,
+                "width": 15,
             },
             "21_wa_date": {
                 "header": {
-                    "value": "วันที่ใบตรวจรับ",
+                    "value": "วันที่ใบตรวจรับ/WA",
                 },
                 "data": {
                     "value": self._render("wa_date"),
                     "format": ctx_format["format_tcell_date_right"],
                 },
-                "width": 12,
+                "width": 15,
             },
             "22_wa_responsible": {
                 "header": {
@@ -258,7 +258,7 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
                     "value": self._render("wa_responsible"),
                     "format": ctx_format["format_tcell_left"],
                 },
-                "width": 25,
+                "width": 30,
             },
             "23_move_number": {
                 "header": {
@@ -268,7 +268,7 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
                     "value": self._render("move_number"),
                     "format": ctx_format["format_tcell_left"],
                 },
-                "width": 12,
+                "width": 15,
             },
             "24_move_date": {
                 "header": {
@@ -278,9 +278,19 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
                     "value": self._render("move_date"),
                     "format": ctx_format["format_tcell_date_right"],
                 },
-                "width": 12,
+                "width": 15,
             },
-            "25_payment_state": {
+            "25_move_amount": {
+                "header": {
+                    "value": "จำนวนเงินที่เบิกจ่าย",
+                },
+                "data": {
+                    "value": self._render("move_amount"),
+                    "format": ctx_format["format_tcell_amount_right"],
+                },
+                "width": 15,
+            },
+            "26_payment_state": {
                 "header": {
                     "value": "สถานะการจ่ายเงิน / Payment Status",
                 },
@@ -288,7 +298,7 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
                     "value": self._render("payment_state"),
                     "format": ctx_format["format_tcell_left"],
                 },
-                "width": 15,
+                "width": 30,
             },
         }
 
@@ -322,8 +332,6 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
         invoice_plan = po.invoice_plan_ids.filtered(
             lambda l: l.invoice_type == "installment"
         )
-        invoice_plan_count = len(invoice_plan.filtered(lambda l: l.invoiced))
-        invoice_plan_balance = len(invoice_plan) - invoice_plan_count
         return {
             "number": i,
             "pr_name": pr.name or "",
@@ -342,13 +350,14 @@ class ReportPurchaseTrackingReportXlsx(models.AbstractModel):
             "po_vendor": po.partner_id.name or "",
             "po_total": po.total_company_currency or "",
             "invoice_plan_total": len(invoice_plan) or "",
-            "invoice_plan_count": invoice_plan_count or "",
-            "invoice_plan_balance": invoice_plan_balance or "",
+            "invoice_plan_count": wa.installment_id.installment or "",
+            "invoice_plan_amount": wa.installment_id.amount or "",
             "wa_number": wa.name or "",
             "wa_date": wa.date_accept or "",
             "wa_responsible": wa.responsible_id.name or "",
             "move_number": move.name or "",
             "move_date": move.date or "",
+            "move_amount": move.amount_total or "",
             "payment_state": payment_state_dict.get(move.payment_state)
             if move.payment_state
             else "",
