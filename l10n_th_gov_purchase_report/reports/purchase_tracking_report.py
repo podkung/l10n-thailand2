@@ -137,7 +137,7 @@ class PurchaseTrackingReport(models.TransientModel):
             LEFT JOIN(
                 -- PO
                 SELECT po.id, max(pr_line.request_id) AS pr_id, agm.id as agm_id,
-                    wa.id as wa_id, move_po.account_move_id as move_id,
+                    wa.id as wa_id, move_wa.id as move_id,
                     po.requisition_id as te_id
                 FROM purchase_order po
                 LEFT JOIN purchase_order_line po_line ON po.id = po_line.order_id
@@ -148,10 +148,10 @@ class PurchaseTrackingReport(models.TransientModel):
                 LEFT JOIN agreement agm ON agm.purchase_order_id = po.id
                 LEFT JOIN work_acceptance wa ON wa.purchase_id = po.id
                     AND wa.state != 'cancel'
-                LEFT JOIN account_move_purchase_order_rel move_po
-                    ON move_po.purchase_order_id = po.id
+                LEFT JOIN account_move move_wa
+                    ON move_wa.wa_id = wa.id AND move_wa.state != 'cancel'
                 WHERE po.state != 'cancel'
-                GROUP BY po.id, agm.id, wa.id, move_po.account_move_id
+                GROUP BY po.id, agm.id, wa.id, move_wa.id
             ) po_table ON pr_table.id = po_table.pr_id
             UNION(
                 -- TE
