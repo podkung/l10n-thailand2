@@ -148,8 +148,7 @@ class ReportNonPurchaseReportXlsx(models.AbstractModel):
         ws_params = {
             "ws_name": "Non Purchase Report",
             "generate_ws_method": "_non_purchase_report",
-            "title": "รายละเอียดแนบท้ายประกาศผลผู้ชนะการจัดซื้อจัดจ้าง"
-            "หรือผู้ได้รับการคัดเลือก และสาระสำคัญของสัญญาหรือข้อตกลงเป็นหนังสือ",
+            "title": "รายงานเบิกจ่ายไม่ผ่านจัดซื้อจัดจ้าง",
             "wanted_list": [k for k in sorted(col_specs.keys())],
             "col_specs": col_specs,
         }
