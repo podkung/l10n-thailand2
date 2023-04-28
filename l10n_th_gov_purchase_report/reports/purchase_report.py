@@ -18,7 +18,8 @@ class PurchaseReportView(models.TransientModel):
     )
     purchase_order_id = fields.Many2one(comodel_name="purchase.order")
     date_signed = fields.Date(string="Signed Date")
-    doc = fields.Char()
+    agreement_name = fields.Char()
+    po_name = fields.Char()
     description = fields.Char(string="Objective")
     pr_amount = fields.Float()
     procurement_method = fields.Char()
@@ -60,10 +61,8 @@ class PurchaseReport(models.TransientModel):
                         WHEN bool(agm.id) THEN agm.signature_date
                         ELSE po.date_approve
                     END as date_signed,
-                    CASE
-                        WHEN bool(agm.id) THEN agm.code
-                        ELSE po.name
-                    END as doc,
+                    agm.code as agreement_name,
+                    po.name as po_name,
                     STRING_AGG(DISTINCT pr.description, ',') AS description,
                     SUM(DISTINCT pr.estimated_cost) AS pr_amount,
                     STRING_AGG(DISTINCT pm.name, ',') AS procurement_method

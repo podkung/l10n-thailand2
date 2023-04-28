@@ -159,12 +159,22 @@ class ReportPurchaseReportXlsx(models.AbstractModel):
             #     },
             #     "width": 15,
             # },
+            "11_po": {
+                "header": {
+                    "value": "เลขที่ใบสั่งซื้อสั่งจ้าง",
+                },
+                "data": {
+                    "value": self._render("po_name"),
+                    "format": ctx_format["format_tcell_left"],
+                },
+                "width": 15,
+            },
             "12_agreement": {
                 "header": {
                     "value": "เลขที่สัญญา",
                 },
                 "data": {
-                    "value": self._render("doc"),
+                    "value": self._render("agreement_name"),
                     "format": ctx_format["format_tcell_left"],
                 },
                 "width": 15,
@@ -186,7 +196,7 @@ class ReportPurchaseReportXlsx(models.AbstractModel):
 
         return [ws_params]
 
-    def _render_space_non_procurement(self, line, i):
+    def _render_space_procurement(self, line, i):
         list_vendor = []
         list_price = []
         for po in (line.requisition_id.purchase_ids).sorted("amount_total"):
@@ -205,7 +215,8 @@ class ReportPurchaseReportXlsx(models.AbstractModel):
             "vendor_name": line.purchase_order_id.partner_id.name,
             "amount_total": line.purchase_order_id.amount_total,
             # "reason": line.purchase_order_id.reason or "",
-            "doc": line.doc,
+            "agreement_name": line.agreement_name or "",
+            "po_name": line.po_name or "",
         }
 
     def _set_column_hight(self, ws, ws_params):
@@ -321,6 +332,6 @@ class ReportPurchaseReportXlsx(models.AbstractModel):
                 row_pos,
                 ws_params,
                 col_specs_section="data",
-                render_space=self._render_space_non_procurement(line, i),
+                render_space=self._render_space_procurement(line, i),
                 default_format=ctx_format["format_tcell_left"],
             )
