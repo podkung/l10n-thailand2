@@ -29,23 +29,25 @@
                     </div>
                 </t>
                 <t t-else="">
-                    <div class="row">
-                        <p class="box-vat">
-                            <t t-out="o.company_id.branch[:1]" />
-                        </p>
-                        <p class="box-vat">
-                            <t t-out="o.company_id.branch[1:2]" />
-                        </p>
-                        <p class="box-vat">
-                            <t t-out="o.company_id.branch[2:3]" />
-                        </p>
-                        <p class="box-vat">
-                            <t t-out="o.company_id.branch[3:4]" />
-                        </p>
-                        <p class="box-vat">
-                            <t t-out="o.company_id.branch[4:5]" />
-                        </p>
-                    </div>
+                    <t t-if="o.company_id.branch">
+                        <div class="row">
+                            <p class="box-vat">
+                                <t t-out="o.company_id.branch[:1]" />
+                            </p>
+                            <p class="box-vat">
+                                <t t-out="o.company_id.branch[1:2]" />
+                            </p>
+                            <p class="box-vat">
+                                <t t-out="o.company_id.branch[2:3]" />
+                            </p>
+                            <p class="box-vat">
+                                <t t-out="o.company_id.branch[3:4]" />
+                            </p>
+                            <p class="box-vat">
+                                <t t-out="o.company_id.branch[4:5]" />
+                            </p>
+                        </div>
+                    </t>
                 </t>
             </div>
         </xpath>
