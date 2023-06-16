@@ -4,7 +4,7 @@ from odoo import fields, models
 
 
 class L10nTHPromptpay(models.Model):
-    _inherit = "payment.acquirer"
+    _inherit = "payment.provider"
     qr_code_promptpay = fields.Boolean("Use PromptPay QR code")
     promptpay_id = fields.Char(
         string="PromptPay ID",
