@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <template
+        id="report_rd_company_tax_branch"
+        inherit_id="l10n_th_account_tax_report.report_rd_company_tax_branch"
+        priority="100"
+    >
+        <xpath expr="//div[1]" position="replace">
+            <div class="col-3">
+                <t
+                    t-if="len(o.branch_ids) != 1 or not o.branch_ids or (len(o.branch_ids) == 1 and o.branch_ids.name == '00000')"
+                >
+                    <input type="checkbox" checked="checked" />
+                </t>
+                <t t-else="">
+                    <input type="checkbox" />
+                </t>
+                สำนักงานใหญ่
+            </div>
+        </xpath>
+        <xpath expr="//div[2]" position="replace">
+            <div class="col-6">
+                <t t-if="len(o.branch_ids) == 1 and o.branch_ids.name != '00000'">
+                    <input type="checkbox" checked="checked" />
+                </t>
+                <t t-else="">
+                    <input type="checkbox" />
+                </t>
+                สาขาที่ <span
+                    t-if="len(o.branch_ids) == 1 and o.branch_ids.name != '00000'"
+                    t-field="o.branch_ids.name"
+                />
+            </div>
+        </xpath>
+    </template>
+</odoo>
