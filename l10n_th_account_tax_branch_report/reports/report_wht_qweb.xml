@@ -20,7 +20,7 @@
         inherit_id="l10n_th_account_tax_report.header_line_report_withholding_tax"
     >
         <xpath expr="//div[4]" position="after">
-            <div class="act_as_cell">Company Tax Branch</div>
+            <div class="act_as_cell">Branch ID</div>
         </xpath>
     </template>
     <template
@@ -29,7 +29,7 @@
     >
         <xpath expr="//div[4]" position="after">
             <div class="act_as_cell left">
-                <t t-out="line.cert_id.tax_branch_id.name" />
+                <t t-out="supplier.branch" />
             </div>
         </xpath>
     </template>
