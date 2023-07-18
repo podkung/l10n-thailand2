@@ -134,10 +134,8 @@ class PurchaseRequest(models.Model):
         return super().button_approved()
 
     def button_rejected(self):
-        """Allows the PR Manager to reject documents after procurement approved only."""
-        pr_manager = self.user_has_groups(
-            "purchase_request.group_purchase_request_manager"
-        )
+        """Allows the Procurement to reject documents after procurement approved only."""
+        po_manager = self.user_has_groups("purchase.group_purchase_user")
         substate_verify = self.env.ref(
             "l10n_th_gov_purchase_request.base_substate_verified"
         )
@@ -146,12 +144,12 @@ class PurchaseRequest(models.Model):
                 l.state == "approved"
                 or (l.state == "to_approve" and l.substate_id == substate_verify)
             )
-            and not pr_manager
+            and not po_manager
         ):
             raise UserError(
                 _(
                     "You are not allowed to reject a document that has already been approved.\n"
-                    "Please contact the Purchase Request Manager."
+                    "Please contact the Procurement."
                 )
             )
         return super().button_rejected()
