@@ -145,6 +145,7 @@ class PurchaseRequest(models.Model):
                 or (l.state == "to_approve" and l.substate_id == substate_verify)
             )
             and not po_manager
+            and not self._context.get("bypass_pr_reject")
         ):
             raise UserError(
                 _(
