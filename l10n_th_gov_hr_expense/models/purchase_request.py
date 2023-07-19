@@ -1,7 +1,8 @@
 # Copyright 2023 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class PurchaseRequest(models.Model):
@@ -35,3 +36,25 @@ class PurchaseRequest(models.Model):
             ]
             action["res_id"] = expense_sheets[0].id
         return action
+
+    def button_draft(self):
+        for rec in self:
+            if any(sheet.state != "cancel" for sheet in rec.expense_sheet_ids):
+                raise UserError(
+                    _(
+                        "The PR is already associated with an Expense. "
+                        "Please cancel the Expense before proceeding."
+                    )
+                )
+        return super().button_draft()
+
+    def button_rejected(self):
+        for rec in self:
+            if any(sheet.state != "cancel" for sheet in rec.expense_sheet_ids):
+                raise UserError(
+                    _(
+                        "The PR is already associated with an Expense. "
+                        "Please cancel the Expense before proceeding."
+                    )
+                )
+        return super().button_rejected()
