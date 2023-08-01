@@ -13,7 +13,7 @@ class BankPaymentExport(models.Model):
         selection_add=[("SICOTHBK", "SCB")],
         ondelete={"SICOTHBK": "cascade"},
     )
-    # # Configuration
+    # Configuration
     config_scb_company_id = fields.Many2one(
         comodel_name="bank.payment.config",
         string="SCB Company ID",
@@ -25,18 +25,7 @@ class BankPaymentExport(models.Model):
             Invoicing > Configuration > Payments > Bank Payment Configuration
         """,
     )
-    # config_ktb_sender_name = fields.Many2one(
-    #     comodel_name="bank.payment.config",
-    #     string="KTB Sender Name",
-    #     default=lambda self: self._default_common_config("config_ktb_sender_name"),
-    #     readonly=True,
-    #     states={"draft": [("readonly", False)]},
-    #     help="""
-    #         You can config this field from menu
-    #         Invoicing > Configuration > Payments > Bank Payment Configuration
-    #     """,
-    # )
-    # # filter
+    # filter
     scb_is_editable = fields.Boolean(
         compute="_compute_ktb_editable",
         string="SCB Editable",
@@ -87,42 +76,56 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
-    # ktb_service_type_direct = fields.Selection(
-    #     selection=[
-    #         ("02", "รายการเข้าบัญชีเงินเดือน (Salary)"),
-    #         ("04", "รายการชำระดอกเบี้ย (Bond Interest)"),
-    #         ("09", "รายการชำระเบี้ยประกัน (Insurance Premium)"),
-    #         ("10", "รายการชำระค่าโทรศัพท์ (Telephone Payment)"),
-    #         ("11", "รายการชำระค่าไฟฟ้า (Electricity Payment)"),
-    #         ("12", "รายการชำระค่าน้ำประปา (Water Payment)"),
-    #         ("14", "รายการชำระค่าสินค้าและบริการ (Purchase & Service)"),
-    #         ("15", "รายการชำระเงินของธนาคารอาคารสงเคราะห์ (GSB)"),
-    #         ("21", "รายการชำระราคาหลักทรัพย์ (Securities)"),
-    #         ("25", "รายการชำระ Clearing Bank"),
-    #         ("27", "รายการชำระค่าประกันสังคม (SSO)"),
-    #         ("28", "รายการชำระของกองสลากฯ (Lottery)"),
-    #         ("37", "รายการชำระด้วยบัตรอิเลคทรอนิคส์ (Electronic Card)"),
-    #         ("46", "รายการจ่ายเงินบำนาญ (Pension Fund)"),
-    #     ],
-    #     ondelete={
-    #         "02": "cascade",
-    #         "04": "cascade",
-    #         "09": "cascade",
-    #         "10": "cascade",
-    #         "11": "cascade",
-    #         "12": "cascade",
-    #         "14": "cascade",
-    #         "15": "cascade",
-    #         "21": "cascade",
-    #         "25": "cascade",
-    #         "27": "cascade",
-    #         "28": "cascade",
-    #         "37": "cascade",
-    #         "46": "cascade",
-    #     },
-    #     readonly=True,
-    #     states={"draft": [("readonly", False)]},
-    # )
+    scb_delivery_mode = fields.Selection(
+        selection=[
+            ("M", "Mail"),
+            ("C", "Counter"),
+            ("P", "Pickup"),
+            ("S", "SCBBusinessNet"),
+        ],
+        ondelete={
+            "M": "cascade",
+            "C": "cascade",
+            "P": "cascade",
+            "S": "cascade",
+        },
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_beneficiary_noti = fields.Selection(
+        selection=[
+            ("N", "None"),
+            ("F", "Fax"),
+            ("S", "SMS"),
+            ("E", "Email"),
+        ],
+        ondelete={
+            "N": "cascade",
+            "F": "cascade",
+            "S": "cascade",
+            "E": "cascade",
+        },
+        default="N",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_beneficiary_phone = fields.Char(
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_beneficiary_email = fields.Char(
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_beneficiary_charge = fields.Selection(
+        selection=[("B", "Beneficiary Charge"), ("C", "Customer Charge")],
+        ondelete={
+            "B": "cascade",
+            "C": "cascade",
+        },
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
 
     @api.depends("bank")
     def _compute_required_effective_date(self):
@@ -136,43 +139,46 @@ class BankPaymentExport(models.Model):
         for export in self:
             export.scb_is_editable = True if export.bank == "SICOTHBK" else False
 
-    # def _get_ktb_sender_name(self):
-    #     return self.config_ktb_sender_name.value or self.env.company.display_name
+    @api.onchange("scb_beneficiary_noti")
+    def _onchange_scb_beneficiary_noti(self):
+        if self.scb_beneficiary_noti != "E":
+            self.scb_beneficiary_email = False
+        elif self.scb_beneficiary_noti not in ("F", "S"):
+            self.scb_beneficiary_phone = False
 
-    # def _get_ktb_receiver_info(self, pe_line):
-    #     return "".ljust(8)
+    def _get_amount_no_decimal(self, amount):
+        if self.bank == "SICOTHBK":
+            return str(int(amount * 1000)).zfill(16)
+        return super()._get_amount_no_decimal(amount)
 
-    # def _get_ktb_receiver_id(self, pe_line):
-    #     return "0".zfill(10)
+    def _get_reference(self):
+        return self.name
 
-    # def _get_ktb_other_info1(self, pe_line):
-    #     return "".ljust(40)
+    def _get_line_count(self):
+        return len(self.export_line_ids)
 
-    # def _get_ktb_other_info2(self, pe_line):
-    #     return "".ljust(20)
+    def _get_mcl_type(self):
+        if self.scb_product_code == "MCL" and self.scb_bank_type == "2":
+            return "2"
+        return " "
 
-    # def _get_ktb_ddr_ref1(self, pe_line):
-    #     return "".ljust(18)
+    def _get_payee_name_eng(self, pe_line):
+        if self.scb_product_code == "BNT":
+            receiver_name = (
+                pe_line.payment_partner_bank_id.acc_holder_name_en
+                or "**Not found account holder en**"
+            )
+            return receiver_name
+        return ""
 
-    # def _get_ktb_ddr_ref2(self, pe_line):
-    #     return pe_line.payment_id.name.ljust(18)
+    def _get_payee_fax(self):
+        return self.scb_beneficiary_phone if self.scb_beneficiary_noti == "F" else ""
 
-    # def _get_ktb_email(self, pe_line):
-    #     return (
-    #         pe_line.payment_partner_id.email
-    #         and pe_line.payment_partner_id.email[:40].ljust(40)
-    #         or "".ljust(40)
-    #     )
+    def _get_payee_sms(self):
+        return self.scb_beneficiary_phone if self.scb_beneficiary_noti == "S" else ""
 
-    # def _get_ktb_sms(self, pe_line):
-    #     return (
-    #         pe_line.payment_partner_id.phone
-    #         and pe_line.payment_partner_id.phone[:20].ljust(20)
-    #         or "".ljust(20)
-    #     )
-
-    # def _get_ktb_receiver_sub_branch_code(self, pe_line):
-    #     return "0".zfill(4)
+    def _get_payee_email(self):
+        return self.scb_beneficiary_email if self.scb_beneficiary_noti == "E" else ""
 
     def _get_text_header_scb(self):
         self.ensure_one()
@@ -186,15 +192,15 @@ class BankPaymentExport(models.Model):
             "001{scb_company}{customer_ref}{file_date}{file_time}BCM"
             "{batch_reference}\r\n".format(
                 scb_company=scb_company_id.ljust(12),
-                customer_ref="".ljust(32),  # TODO
+                customer_ref=self._get_reference().ljust(32),
                 file_date=file_date,
                 file_time=file_time,
-                batch_reference="".ljust(32),  # TODO
+                batch_reference=self._get_reference().ljust(32),
             )
         )
         return text
 
-    def _get_text_company_detail_scb(self, payment_lines):
+    def _get_text_company_detail_scb(self, payment_lines, total_batch_amount):
         self.ensure_one()
         # NOTE: Can pay with 1 account
         account_bank_payment = self.export_line_ids[
@@ -202,32 +208,28 @@ class BankPaymentExport(models.Model):
         ].payment_journal_id.bank_account_id.acc_number
         account_type = "0{}".format(account_bank_payment[3])
         branch_code = "0{}".format(account_bank_payment[0:3])
-        output_map = {
-            "1": " ",
-            "2": "2",
-        }
         text = (
             "002{product_code}{value_date}{debit_account_no}{account_type_debit_account}"
             "{debit_branch_code}THB{debit_amount}{internal_ref}{no_credit}{fee_debit_account}"
-            "{filler}{bank_type}{account_type_fee}{debit_branch_code_fee}\r\n".format(
+            "{filler}{mcl_type}{account_type_fee}{debit_branch_code_fee}\r\n".format(
                 product_code=self.scb_product_code,
                 value_date=self.effective_date.strftime("%Y%m%d"),
                 debit_account_no=account_bank_payment.ljust(25),
                 account_type_debit_account=account_type,
                 debit_branch_code=branch_code,
-                debit_amount="",
-                internal_ref="",
-                no_credit="",
-                fee_debit_account="",
+                debit_amount=total_batch_amount,
+                internal_ref=self._get_reference().ljust(8),
+                no_credit=str(self._get_line_count()).zfill(6),
+                fee_debit_account=account_bank_payment.ljust(15),
                 filler="".ljust(9),
-                bank_type=output_map.get(self.scb_bank_type),
-                account_type_fee="",
-                debit_branch_code_fee="",
+                mcl_type=self._get_mcl_type(),
+                account_type_fee=account_type,
+                debit_branch_code_fee=branch_code,
             )
         )
         return text
 
-    def _get_text_credit_detail_scb(self, idx, pe_line, payment_net_amount_bank):
+    def _get_text_credit_detail_scb(self, idx, pe_line, line_batch_amount):
         # Receiver
         (
             receiver_name,
@@ -235,69 +237,91 @@ class BankPaymentExport(models.Model):
             receiver_branch_code,
             receiver_acc_number,
         ) = pe_line._get_receiver_information()
+        mapping_charge = {
+            "B": "B",
+            "C": " ",
+        }
         text = (
             "003{idx}{credit_account}{credit_amount}THB{internal_ref}{wht_present}"
             "{invoice_detail_present}{credit_advice_required}{delivery_mode}"
-            "{pickup_location}\r\n".format(
+            "{pickup_location}{notification}{charge}\r\n".format(
                 idx=str(idx).zfill(6),
                 credit_account=receiver_acc_number.ljust(25),
-                credit_amount=payment_net_amount_bank
-                and str(payment_net_amount_bank)[:17].zfill(16)
-                or "0".zfill(16),
-                internal_ref="",
-                wht_present="",
-                invoice_detail_present="",
-                credit_advice_required="",
-                delivery_mode="",
-                pickup_location="",
+                credit_amount=line_batch_amount,
+                internal_ref=self._get_reference().ljust(8),
+                wht_present="N",
+                invoice_detail_present="N",
+                credit_advice_required="Y",
+                delivery_mode=self.scb_delivery_mode,
+                pickup_location="",  # TODO
+                # TODO: many field is not do
+                notification=self.scb_beneficiary_noti,
+                # TODO: many field is not do
+                charge=mapping_charge.get(self.scb_beneficiary_charge),
             )
         )
         return text
 
-    def _get_text_payee_detail_scb(self, idx, pe_line, payment_net_amount_bank):
+    def _get_text_payee_detail_scb(self, idx, pe_line, line_batch_amount):
+        receiver_name = pe_line._get_receiver_information()[0]
+        receiver_address1 = " ".join(
+            [
+                pe_line.payment_partner_id.street,
+            ]
+        )
+        receiver_address2 = " ".join(
+            [
+                pe_line.payment_partner_id.street2,
+                pe_line.payment_partner_id.city,
+                pe_line.payment_partner_id.zip,
+            ]
+        )
         text = (
-            "004{internal_ref}{credit_sequence}{payee_idcard}{payee_name}"
-            "{payee_address}{payee_tax_id}\r\n".format(
-                internal_ref="",
-                credit_sequence="",
-                payee_idcard="",
-                payee_name="",
-                payee_address="",
-                payee_tax_id="",
+            "004{internal_ref}{idx}{payee_idcard}{payee_name}"
+            "{payee_address1}{payee_address2}{payee_address3}{payee_tax_id}"
+            "{payee_name_eng}{payee_fax}{payee_sms}{payee_email}{space}\r\n".format(
+                internal_ref=self._get_reference().ljust(8),
+                idx=str(idx).zfill(6),
+                payee_idcard=str(pe_line.payment_partner_id.vat).zfill(15),
+                payee_name=receiver_name.ljust(100),
+                payee_address1=receiver_address1.ljust(70),
+                payee_address2=receiver_address2.ljust(70),
+                payee_address3="".ljust(70),
+                payee_tax_id="".ljust(10),
+                payee_name_eng=self._get_payee_name_eng(pe_line).ljust(70),
+                payee_fax=self._get_payee_fax(),  # TODO: why numeric?
+                payee_sms=self._get_payee_sms(),  # TODO: why numeric?
+                payee_email=self._get_payee_email().ljust(64),
+                # TODO
+                space="".ljust(310),
             )
         )
         return text
 
-    def _get_text_footer_scb(self, payment_lines):
+    def _get_text_footer_scb(self, payment_lines, total_batch_amount):
         text = "999{total_debit}{total_credit}{total_amount}\r\n".format(
             total_debit="1".zfill(6),
             total_credit=str(len(payment_lines)).zfill(6),
-            total_amount="0000000000000000",  # TODO
+            total_amount=total_batch_amount,
         )
         return text
 
     def _format_scb_text(self):
         self.ensure_one()
-        total_amount = 0
         payment_lines = self.export_line_ids
-        # total_amount =
         # Header
         text = self._get_text_header_scb()
-        text += self._get_text_company_detail_scb(payment_lines)
+        total_batch_amount = self._get_amount_no_decimal(self.total_amount)
+        text += self._get_text_company_detail_scb(payment_lines, total_batch_amount)
         # Details
         for idx, pe_line in enumerate(payment_lines):
             # This amount related decimal from invoice, Odoo invoice do not rounding.
             payment_net_amount = pe_line._get_payment_net_amount()
-            payment_net_amount_bank = pe_line._get_amount_no_decimal(payment_net_amount)
-            text += self._get_text_credit_detail_scb(
-                idx, pe_line, payment_net_amount_bank
-            )
-            text += self._get_text_payee_detail_scb(
-                idx, pe_line, payment_net_amount_bank
-            )
-            # text += self._get_text_wht_detail_scb(idx, pe_line, payment_net_amount_bank)
-            total_amount += payment_net_amount_bank
-        text += self._get_text_footer_scb(payment_lines)
+            line_batch_amount = pe_line._get_amount_no_decimal(payment_net_amount)
+            text += self._get_text_credit_detail_scb(idx, pe_line, line_batch_amount)
+            text += self._get_text_payee_detail_scb(idx, pe_line, line_batch_amount)
+            # text += self._get_text_wht_detail_scb(idx, pe_line, line_batch_amount)
+        text += self._get_text_footer_scb(payment_lines, total_batch_amount)
         return text
 
     def _generate_bank_payment_text(self):
@@ -314,7 +338,7 @@ class BankPaymentExport(models.Model):
 
     # def _check_constraint_confirm(self):
     #     res = super()._check_constraint_confirm()
-    #     for rec in self.filtered(lambda l: l.bank == "KRTHTHBK"):
+    #     for rec in self.filtered(lambda l: l.bank == "SICOTHBK"):
     #         if not rec.ktb_bank_type:
     #             raise UserError(_("You need to add 'Bank Type' before confirm."))
     #         if rec.ktb_bank_type == "direct" and any(

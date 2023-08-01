@@ -26,6 +26,45 @@
                     string="Product Code"
                     attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
                 />
+                <field
+                    name="scb_delivery_mode"
+                    string="Delivery Mode"
+                    attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
+                />
+            </xpath>
+            <xpath
+                expr="//page[@name='information']//group[@name='right_information']"
+                position="inside"
+            >
+                <label
+                    for="scb_beneficiary_noti"
+                    string="Beneficiary Notification"
+                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
+                />
+                <div>
+                    <field
+                        name="scb_beneficiary_noti"
+                        class="oe_inline"
+                        attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
+                    />
+                    <br />
+                    <field
+                        name="scb_beneficiary_phone"
+                        class="oe_inline"
+                        widget="phone"
+                        attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_beneficiary_noti', 'not in', ['F', 'S'])], 'required': [('scb_is_editable', '!=', False), ('scb_beneficiary_noti', 'in', ['F', 'S'])]}"
+                    />
+                    <field
+                        name="scb_beneficiary_email"
+                        widget="email"
+                        attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_beneficiary_noti', '!=', 'E')], 'required': [('scb_is_editable', '!=', False), ('scb_beneficiary_noti', '=', 'E')]}"
+                    />
+                </div>
+                <field
+                    name="scb_beneficiary_charge"
+                    string="Charge"
+                    attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
+                />
             </xpath>
             <xpath
                 expr="//page[@name='information']/group[@name='system_config']"
