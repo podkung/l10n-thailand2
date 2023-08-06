@@ -92,6 +92,7 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+    scb_pickup_location = fields.Selection(selection=[("N", "TODO")])
     scb_beneficiary_noti = fields.Selection(
         selection=[
             ("N", "None"),
@@ -123,6 +124,28 @@ class BankPaymentExport(models.Model):
             "B": "cascade",
             "C": "cascade",
         },
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_is_invoice_present = fields.Boolean(
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_invoice_language = fields.Selection(
+        selection=[("T", "Thai"), ("E", "English")],
+        ondelete={
+            "T": "cascade",
+            "E": "cascade",
+        },
+        default="T",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_is_wht_present = fields.Boolean(
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_is_credit_advice = fields.Boolean(
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -180,6 +203,59 @@ class BankPaymentExport(models.Model):
     def _get_payee_email(self):
         return self.scb_beneficiary_email if self.scb_beneficiary_noti == "E" else ""
 
+    def _get_wht_income_type(self, wht_line):
+        wht_income_type = wht_line.wht_cert_income_type.lower()
+        if len(wht_income_type) == 4:
+            wht_income_type = "{}.{}".format(wht_income_type[:3], wht_income_type[3:])
+        return wht_income_type
+
+    def _get_wht_header(self, wht_cert):
+        if not self.scb_is_wht_present:
+            return "".ljust(40)
+        wht_type = "00"
+        if wht_cert.income_tax_form == "pnd1":
+            wht_type = "01"
+        elif wht_cert.income_tax_form == "pnd3":
+            wht_type = "03"
+        elif wht_cert.income_tax_form == "pnd53":
+            wht_type = "53"
+        total_wht = self._get_amount_no_decimal(sum(wht_cert.wht_line.mapped("amount")))
+        text = "{wht_type}{wht_running_no}{wht_attach_no}{wht_line}{total_wht}".format(
+            wht_type=wht_type,
+            wht_running_no="".ljust(14),  # NOTE: Bank will generate
+            wht_attach_no="0".zfill(6),  # NOTE: Bank will generate
+            wht_line=str(len(wht_cert.wht_line)).zfill(2),
+            total_wht=total_wht,
+        )
+        return text
+
+    def _get_wht_header2(self, wht_cert):
+        if not self.scb_is_wht_present:
+            return "".ljust(49)
+        pay_type = "0"
+        if wht_cert.tax_payer == "withholding":
+            pay_type = "3"
+        elif wht_cert.tax_payer == "paid_one_time":
+            pay_type = "1"
+        text = "{pay_type}{wht_remark}{wht_deduct_date}".format(
+            pay_type=pay_type,
+            wht_remark="".ljust(40),
+            wht_deduct_date=wht_cert.date.strftime("%Y%m%d"),
+        )
+        return text
+
+    def _get_invoice_header(self, invoices):
+        if not self.scb_is_invoice_present:
+            return "".ljust(22)
+        invoice_total_amount = self._get_amount_no_decimal(
+            sum(invoices.mapped("amount_total"))
+        )
+        text = "{invoice_count}{invoice_total_amount}".format(
+            invoice_count=str(len(invoices)).zfill(6),
+            invoice_total_amount=invoice_total_amount,
+        )
+        return text
+
     def _get_text_header_scb(self):
         self.ensure_one()
         scb_company_id = (
@@ -229,7 +305,9 @@ class BankPaymentExport(models.Model):
         )
         return text
 
-    def _get_text_credit_detail_scb(self, idx, pe_line, line_batch_amount):
+    def _get_text_credit_detail_scb(
+        self, idx, pe_line, line_batch_amount, wht_cert, invoices
+    ):
         # Receiver
         (
             receiver_name,
@@ -244,7 +322,10 @@ class BankPaymentExport(models.Model):
         text = (
             "003{idx}{credit_account}{credit_amount}THB{internal_ref}{wht_present}"
             "{invoice_detail_present}{credit_advice_required}{delivery_mode}"
-            "{pickup_location}{notification}{charge}\r\n".format(
+            "{pickup_location}{wht_header}{invoice_number}{wht_header2}"
+            "{receiver_bank_code}{receiver_bank_name}{receiver_branch_code}"
+            "{receiver_branch_name}{wht_signatory}{notification}{customer_ref}"
+            "{cheque_ref}{payment_type_code}{service_type}{remark}{charge}\r\n".format(
                 idx=str(idx).zfill(6),
                 credit_account=receiver_acc_number.ljust(25),
                 credit_amount=line_batch_amount,
@@ -254,15 +335,26 @@ class BankPaymentExport(models.Model):
                 credit_advice_required="Y",
                 delivery_mode=self.scb_delivery_mode,
                 pickup_location="",  # TODO
-                # TODO: many field is not do
+                wht_header=self._get_wht_header(wht_cert),  # WHT Form Type - Total WHT
+                invoice_number=self._get_invoice_header(invoices),
+                wht_header2=self._get_wht_header2(wht_cert),  # Pay Type - Deduct Date
+                receiver_bank_code=receiver_bank_code,
+                receiver_bank_name=pe_line.payment_partner_bank_id.bank_id.name,
+                receiver_branch_code="".zfill(4),  # TODO
+                receiver_branch_name="".ljust(35),  # TODO
+                wht_signatory="B",
                 notification=self.scb_beneficiary_noti,
-                # TODO: many field is not do
+                customer_ref="".ljust(20),  # TODO
+                cheque_ref="".ljust(1),  # TODO
+                payment_type_code="".ljust(3),  # TODO
+                service_type="".ljust(2),
+                remark="".ljust(68),
                 charge=mapping_charge.get(self.scb_beneficiary_charge),
             )
         )
         return text
 
-    def _get_text_payee_detail_scb(self, idx, pe_line, line_batch_amount):
+    def _get_text_payee_detail_scb(self, idx, pe_line, line_batch_amount, wht_cert):
         receiver_name = pe_line._get_receiver_information()[0]
         receiver_address1 = " ".join(
             [
@@ -271,9 +363,9 @@ class BankPaymentExport(models.Model):
         )
         receiver_address2 = " ".join(
             [
-                pe_line.payment_partner_id.street2,
-                pe_line.payment_partner_id.city,
-                pe_line.payment_partner_id.zip,
+                pe_line.payment_partner_id.street2 or "",
+                pe_line.payment_partner_id.city or "",
+                pe_line.payment_partner_id.zip or "",
             ]
         )
         text = (
@@ -298,6 +390,50 @@ class BankPaymentExport(models.Model):
         )
         return text
 
+    def _get_text_wht_detail_scb(self, idx, sequence_wht, wht_line):
+        wht_amount = self._get_amount_no_decimal(wht_line.amount)
+        wht_base_amount = self._get_amount_no_decimal(wht_line.base)
+        wht_income_type = self._get_wht_income_type(wht_line)
+        text = (
+            "005{internal_ref}{idx}{wht_sequence}{wht_amount}"
+            "{wht_income_type}{wht_income_description}{wht_deduct_rate}"
+            "{wht_base_amount}\r\n".format(
+                internal_ref=self._get_reference().ljust(8),
+                idx=str(idx).zfill(6),
+                wht_sequence=str(sequence_wht).zfill(2),
+                wht_amount=wht_amount,
+                wht_income_type=wht_income_type.ljust(5),
+                wht_income_description=wht_line.wht_cert_income_desc.ljust(80),
+                wht_deduct_rate=str(abs(int(wht_line.wht_percent))).zfill(2),
+                wht_base_amount=wht_base_amount,
+            )
+        )
+        return text
+
+    def _get_text_invoice_detail_scb(self, idx, sequence_inv, inv):
+        inv_amount_untaxed = self._get_amount_no_decimal(inv.amount_untaxed)
+        inv_amount_tax = self._get_amount_no_decimal(inv.amount_tax)
+        purchase = inv.invoice_line_ids.mapped("purchase_line_id.order_id")
+        text = (
+            "006{internal_ref}{idx}{inv_sequence}{inv_number}{inv_amount}"
+            "{inv_date}{inv_description}{po_number}{vat_amount}{payee_chage_amount}"
+            "{wht_amount}{language}\r\n".format(
+                internal_ref=self._get_reference().ljust(8),
+                idx=str(idx).zfill(6),
+                inv_sequence=str(sequence_inv).zfill(6),
+                inv_number=inv.name.ljust(15) if inv.name != "/" else ".".ljust(15),
+                inv_amount=inv_amount_untaxed,
+                inv_date=inv.invoice_date.strftime("%Y%m%d"),
+                inv_description="".ljust(70),
+                po_number=(purchase.name or "").ljust(15),
+                vat_amount=inv_amount_tax,
+                payee_chage_amount="0".zfill(16),
+                wht_amount="0".zfill(16),  # TODO
+                language=self.scb_invoice_language,
+            )
+        )
+        return text
+
     def _get_text_footer_scb(self, payment_lines, total_batch_amount):
         text = "999{total_debit}{total_credit}{total_amount}\r\n".format(
             total_debit="1".zfill(6),
@@ -318,9 +454,25 @@ class BankPaymentExport(models.Model):
             # This amount related decimal from invoice, Odoo invoice do not rounding.
             payment_net_amount = pe_line._get_payment_net_amount()
             line_batch_amount = pe_line._get_amount_no_decimal(payment_net_amount)
-            text += self._get_text_credit_detail_scb(idx, pe_line, line_batch_amount)
-            text += self._get_text_payee_detail_scb(idx, pe_line, line_batch_amount)
-            # text += self._get_text_wht_detail_scb(idx, pe_line, line_batch_amount)
+            wht_cert = pe_line.payment_id.wht_cert_ids.filtered(
+                lambda l: l.state == "done"
+            )
+            invoices = pe_line.payment_id.reconciled_bill_ids
+            text += self._get_text_credit_detail_scb(
+                idx, pe_line, line_batch_amount, wht_cert, invoices
+            )
+            text += self._get_text_payee_detail_scb(
+                idx, pe_line, line_batch_amount, wht_cert
+            )
+            # Print WHT from bank
+            if self.scb_is_wht_present:
+                # Get withholding tax from payment state done only
+                for sequence_wht, wht_line in enumerate(wht_cert.wht_line):
+                    text += self._get_text_wht_detail_scb(idx, sequence_wht, wht_line)
+            # Print Invoices from bank
+            if self.scb_is_invoice_present:
+                for sequence_inv, inv in enumerate(invoices):
+                    text += self._get_text_invoice_detail_scb(idx, sequence_inv, inv)
         text += self._get_text_footer_scb(payment_lines, total_batch_amount)
         return text
 

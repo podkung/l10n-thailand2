@@ -231,6 +231,10 @@ class BankPaymentExport(models.Model):
         )
         return ctx
 
+    def _get_amount_no_decimal(self, amount):
+        """Implementation is available"""
+        return amount
+
     @api.model
     def _default_common_config(self, field):
         field_default_duplicate = self.env["bank.payment.config"].search(

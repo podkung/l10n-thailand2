@@ -48,3 +48,8 @@ class BankPaymentExportLine(models.Model):
                 sender_acc_number and sender_acc_number[:11].zfill(11) or "-----------"
             )
         return sender_bank_code, sender_branch_code, sender_acc_number
+
+    def _get_amount_no_decimal(self, amount):
+        if self.payment_export_id.bank == "SICOTHBK":
+            return str(int(amount * 1000)).zfill(16)
+        return super()._get_amount_no_decimal(amount)
