@@ -42,20 +42,20 @@ class BankPaymentExport(models.Model):
     )
     scb_product_code = fields.Selection(
         selection=[
-            ("BNT", "Bahtnet"),
-            ("DCP", "Direct Credit"),
-            ("MCL", "Media Clearing"),
-            ("PAY", "Payroll"),
-            ("PA2", "Payroll 2"),
-            ("PA3", "Payroll 3"),
-            ("PA4", "MediaClearing Payroll"),
-            ("PA5", "MediaClearing Payroll 2"),
-            ("PA6", "MediaClearing Payroll 3"),
-            ("MCP", "MCheque"),
-            ("CCP", "Corporate Cheque"),
-            ("DDP", "Demand Draft"),
-            ("XMQ", "Express Manager Cheque"),
-            ("XDQ", "Express Demand Draft"),
+            ("BNT", "BNT - Bahtnet"),
+            ("DCP", "DCP - Direct Credit"),
+            ("MCL", "MCL - Media Clearing"),
+            ("PAY", "PAY - Payroll"),
+            ("PA2", "PA2 - Payroll 2"),
+            ("PA3", "PA3 - Payroll 3"),
+            ("PA4", "PA4 - MediaClearing Payroll"),
+            ("PA5", "PA5 - MediaClearing Payroll 2"),
+            ("PA6", "PA6 - MediaClearing Payroll 3"),
+            ("MCP", "MCP - MCheque"),
+            ("CCP", "CCP - Corporate Cheque"),
+            ("DDP", "DDP - Demand Draft"),
+            ("XMQ", "XMQ - Express Manager Cheque"),
+            ("XDQ", "XDQ - Express Demand Draft"),
         ],
         ondelete={
             "BNT": "cascade",
@@ -92,7 +92,38 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
-    scb_pickup_location = fields.Selection(selection=[("N", "TODO")])
+    scb_pickup_location = fields.Selection(
+        selection=[
+            ("C001", "C001 - รัชโยธิน"),
+            ("C002", "C002 - ชิดลม"),
+            ("C003", "C003 - มาบตาพุด"),
+            ("C004", "C004 - ลาดกระบัง"),
+            ("C005", "C005 - ท่าแพ"),
+            ("C006", "C006 - อโศก"),
+            ("C007", "C007 - พัทยา สาย2"),
+            ("C008", "C008 - พระราม 4"),
+            ("C009", "C009 - ถนนเชิดวุฒากาศ"),
+            ("C010", "C010 - แหลมฉบัง"),
+            ("C011", "C011 - ไอทีสแควร์ (หลักสี่)"),
+            ("C012", "C012 - สุวรรณภูมิ"),
+        ],
+        ondelete={
+            "C001": "cascade",
+            "C002": "cascade",
+            "C003": "cascade",
+            "C004": "cascade",
+            "C005": "cascade",
+            "C006": "cascade",
+            "C007": "cascade",
+            "C008": "cascade",
+            "C009": "cascade",
+            "C010": "cascade",
+            "C011": "cascade",
+            "C012": "cascade",
+        },
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     scb_beneficiary_noti = fields.Selection(
         selection=[
             ("N", "None"),
@@ -117,6 +148,83 @@ class BankPaymentExport(models.Model):
     scb_beneficiary_email = fields.Char(
         readonly=True,
         states={"draft": [("readonly", False)]},
+    )
+    scb_service_type = fields.Selection(
+        selection=[
+            ("01", "01 - เงินเดือน, ค่าจ้าง, บำเหน็จ, บำนาญ"),
+            ("02", "02 - เงินปันผล"),
+            ("03", "03 - ดอกเบี้ย"),
+            ("04", "04 - ค่าสินค้า, บริการ"),
+            ("05", "05 - ขายหลักทรัพย์"),
+            ("06", "06 - คืนภาษี"),
+            ("07", "07 - เงินกู้"),
+            ("59", "59 - อื่น ๆ"),
+        ],
+        ondelete={
+            "01": "cascade",
+            "02": "cascade",
+            "03": "cascade",
+            "04": "cascade",
+            "05": "cascade",
+            "06": "cascade",
+            "07": "cascade",
+            "59": "cascade",
+        },
+    )
+    scb_service_type_bahtnet = fields.Selection(
+        selection=[
+            ("00", "00 - Other"),
+            ("01", "01 - Freight"),
+            ("02", "02 - Insurance Premium"),
+            ("03", "03 - Trasportation Cost"),
+            ("04", "04 - Travelling Expenses (Thai)"),
+            ("05", "05 - Forign Tourist Expenses"),
+            ("06", "06 - Interest Paid"),
+            ("07", "07 - Dividened"),
+            ("08", "08 - Education"),
+            ("09", "09 - Royalty Fee"),
+            ("10", "10 - Agency Expenses"),
+            ("11", "11 - Advertising Fee"),
+            ("12", "12 - Communication Cost"),
+            ("13", "13 - Personal Remittance / Family Support"),
+            ("14", "14 - Money Transfer for Government"),
+            ("15", "15 - Embassy / Military / Government Expenses"),
+            ("16", "16 - Thai Lobour Money Transfer"),
+            ("17", "17 - Salary"),
+            ("18", "18 - Commission Fee"),
+            ("19", "19 - Loan"),
+            ("20", "20 - Direct Investment"),
+            ("21", "21 - Portfolio Investment"),
+            ("22", "22 - Trade Transaction"),
+            ("23", "23 - Fixed Asset Investment"),
+        ],
+        ondelete={
+            "00": "cascade",
+            "01": "cascade",
+            "02": "cascade",
+            "03": "cascade",
+            "04": "cascade",
+            "05": "cascade",
+            "06": "cascade",
+            "07": "cascade",
+            "08": "cascade",
+            "09": "cascade",
+            "10": "cascade",
+            "11": "cascade",
+            "12": "cascade",
+            "13": "cascade",
+            "14": "cascade",
+            "15": "cascade",
+            "16": "cascade",
+            "17": "cascade",
+            "18": "cascade",
+            "19": "cascade",
+            "20": "cascade",
+            "21": "cascade",
+            "22": "cascade",
+            "23": "cascade",
+        },
+        string="Service Type (BahtNet)",
     )
     scb_beneficiary_charge = fields.Selection(
         selection=[("B", "Beneficiary Charge"), ("C", "Customer Charge")],
@@ -487,6 +595,19 @@ class BankPaymentExport(models.Model):
         if self.bank == "SICOTHBK":
             return "l10n_th_bank_payment_export_scb.action_payment_scb_txt"
         return super()._get_view_report_text()
+
+    def _get_context_create_bank_payment_export(self, payments):
+        ctx = super()._get_context_create_bank_payment_export(payments)
+        ctx.update(
+            {
+                "default_scb_product_code": payments.scb_product_code,
+                "default_scb_service_type": payments.scb_service_type,
+                "default_scb_service_type_bahtnet": payments.scb_service_type_bahtnet,
+                "default_scb_delivery_mode": payments.scb_delivery_mode,
+                "default_scb_pickup_location": payments.scb_pickup_location,
+            }
+        )
+        return ctx
 
     # def _check_constraint_confirm(self):
     #     res = super()._check_constraint_confirm()

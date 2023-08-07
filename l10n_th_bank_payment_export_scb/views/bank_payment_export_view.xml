@@ -29,12 +29,49 @@
                 <field
                     name="scb_delivery_mode"
                     string="Delivery Mode"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
+                    attrs="{
+                        'invisible': [
+                            '|',
+                            ('scb_is_editable', '!=', True),
+                            ('scb_product_code', 'not in', ['MCP', 'DDP', 'CCP']),
+                            ('scb_is_invoice_present', '!=', True),
+                            ('scb_is_wht_present', '!=', True),
+                            ('scb_is_credit_advice', '!=', True)
+                        ],
+                        'required': [
+                            '&amp;',
+                            ('scb_is_editable', '!=', False),
+                            '|',
+                            ('scb_product_code', 'in', ['MCP', 'DDP', 'CCP']),
+                            '|',
+                            ('scb_is_invoice_present', '!=', False),
+                            '|',
+                            ('scb_is_wht_present', '!=', False),
+                            ('scb_is_credit_advice', '!=', False)
+                        ]
+                    }"
                 />
                 <field
                     name="scb_pickup_location"
                     string="Pickup Location"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
+                    attrs="{
+                        'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_delivery_mode', '!=', 'C')],
+                        'required': [('scb_is_editable', '!=', False), ('scb_delivery_mode', '=', 'C')]}"
+                />
+                <field
+                    name="scb_service_type"
+                    string="Service Type"
+                    attrs="{
+                        'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', 'not in', ['MCL', 'PA4', 'PA5', 'PA6'])],
+                        'required': [('scb_is_editable', '!=', False), ('scb_product_code', 'in', ['MCL', 'PA4', 'PA5', 'PA6'])]
+                    }"
+                />
+                <field
+                    name="scb_service_type_bahtnet"
+                    attrs="{
+                        'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', '!=', 'BNT')],
+                        'required': [('scb_is_editable', '!=', False), ('scb_product_code', '=', 'BNT')]
+                    }"
                 />
                 <label
                     for="scb_is_invoice_present"
