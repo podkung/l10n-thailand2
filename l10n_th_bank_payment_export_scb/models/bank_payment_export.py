@@ -3,7 +3,8 @@
 
 from datetime import datetime
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class BankPaymentExport(models.Model):
@@ -78,10 +79,10 @@ class BankPaymentExport(models.Model):
     )
     scb_delivery_mode = fields.Selection(
         selection=[
-            ("M", "Mail"),
-            ("C", "Counter"),
-            ("P", "Pickup"),
-            ("S", "SCBBusinessNet"),
+            ("M", "Mail => Send by Registered mail"),
+            ("C", "Counter => Send by messenger to Customer"),
+            ("P", "Pickup => Receiving pickup at SCB branch"),
+            ("S", "SCBBusinessNet => Send back to SCBBusinessNet"),
         ],
         ondelete={
             "M": "cascade",
@@ -235,10 +236,6 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
-    scb_is_invoice_present = fields.Boolean(
-        readonly=True,
-        states={"draft": [("readonly", False)]},
-    )
     scb_invoice_language = fields.Selection(
         selection=[("T", "Thai"), ("E", "English")],
         ondelete={
@@ -249,11 +246,149 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+    scb_is_invoice_present = fields.Boolean(
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     scb_is_wht_present = fields.Boolean(
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
     scb_is_credit_advice = fields.Boolean(
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_wht_signatory = fields.Selection(
+        selection=[("B", "Bank"), ("C", "Corporate")],
+        ondelete={
+            "B": "cascade",
+            "C": "cascade",
+        },
+        default="B",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_cheque_ref = fields.Selection(
+        selection=[
+            ("1", "ใบเสร็จรับเงิน"),
+            ("2", "ใบวางบิล"),
+            ("3", "ใบเสร็จรับเงินและใบวางบิล"),
+            ("4", "ใบเสร็จรับเงินและใบกำกับภาษี"),
+            ("5", "ใบวางบิลและใบเสร็จรับเงินและใบกำกับภาษี"),
+            ("6", "สำเนาบัตรประชาชน/หนังสือเดินทาง"),
+            ("7", "สำเนาบัตรประชาชน/หนังสือเดินทาง + ใบนัดรับของรางวัล"),
+            ("8", "สำเนาบัตรประชาชน/หนังสือเดินทาง + ใบสั่งจ้าง"),
+            ("9", "สำเนาใบเสร็จรับเงิน"),
+            ("A", "เงินในเช็คใบเสร็จไม่เท่ากัน - จ่าย"),
+            ("B", "หนังสือรับรองการหักภาษีณ.ที่จ่าย."),
+            ("C", "หนังสือกรมศุลกากร"),
+            ("D", "ใบกำกับภาษี"),
+            (
+                "E",
+                "หนังสือมอบพร้อมติดอากรแสตมป์ 10 บาท + สำเนาบัตร ปชช.ผู้มอบพร้อมลงนาม "
+                "+ สำเนาบัตร ปชช.ผู้รับมอบพร้อมลงนาม",
+            ),
+            (
+                "F",
+                "หนังสือมอบจากคณะบุคคลพร้อมติดอากรแสตมป์ 10 บาท + "
+                "สำเนาสัญญาจัดตั้งคณะบุคคลพร้อมลงนาม + "
+                "สำเนาบัตรผู้เสียภาษีของคณะบุคคลพร้อมลงนาม + "
+                "สำเนาบัตร ปชช.ผู้มอบ และผู้รับมอบ พร้อมลงนาม",
+            ),
+            ("G", "เอกสารยืนยันการโอนเงิน/ออกเช็คผ่านโทรสาร"),
+            ("H", "อื่น ๆ"),
+            ("I", "สัญญาประนีประนอม"),
+            ("J", "ใบเสร็จ/ใบกำกับภาษี + ใบรับรถ"),
+            ("K", "หนังสือมอบ + บัตร ปชช.ผู้รับมอบ"),
+            ("L", "บัตร ปชช.ผู้มอบ + บัตร ปชช.ผู้รับมอบ"),
+            ("M", "ใบรับรถ + เซ็นชื่อใบรับเงิน/สัญญา"),
+            ("N", "ใบรถ + น.มอบ + ผู้รับมอบ + เซ็นชื่อ/สัญญา"),
+            ("O", "ใบรับเช็ค"),
+            ("P", "ใบลดหนี้"),
+            ("Q", "ใบเพิ่มหนี้"),
+            ("R", "ดูช่อง Invoice Description ใน Advice"),
+            ("S", "ขายลดเช็คทันที"),
+            ("T", "Email + สำเนาบัตรพนง. + สำเนาบัตรปปช."),
+            ("U", "ค่าสาธารณูปโภค"),
+            ("V", "ใบเสร็จรับเงินและ หนังสือรับรองหักภาษี ณ ที่จ่าย"),
+            ("W", "ใบเสร็จรับเงิน หรือบัตรประชาชน"),
+            ("X", "ไม่ใช้เอกสารใด ๆ"),
+            ("Y", "ใบวางบิลและใบเสร็จรับเงิน (จำนวนเงินไม่ตรง-จ่าย)"),
+            ("Z", "ใบวางบิลและสำเนาบัตรประชาชน"),
+        ],
+        ondelete={
+            "1": "cascade",
+            "2": "cascade",
+            "3": "cascade",
+            "4": "cascade",
+            "5": "cascade",
+            "6": "cascade",
+            "7": "cascade",
+            "8": "cascade",
+            "9": "cascade",
+            "A": "cascade",
+            "B": "cascade",
+            "C": "cascade",
+            "D": "cascade",
+            "E": "cascade",
+            "F": "cascade",
+            "G": "cascade",
+            "H": "cascade",
+            "I": "cascade",
+            "J": "cascade",
+            "K": "cascade",
+            "L": "cascade",
+            "M": "cascade",
+            "N": "cascade",
+            "O": "cascade",
+            "P": "cascade",
+            "Q": "cascade",
+            "R": "cascade",
+            "S": "cascade",
+            "T": "cascade",
+            "U": "cascade",
+            "V": "cascade",
+            "W": "cascade",
+            "X": "cascade",
+            "Y": "cascade",
+            "Z": "cascade",
+        },
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_payment_type_code = fields.Selection(
+        selection=[
+            ("CSH", "CSH - Cash"),
+            ("BCQ", "BCQ - Branch or other bank chqs"),
+            ("HCQ", "HCQ - Home chqs"),
+            ("DCA", "DCA - Current A/C"),
+            ("DSA", "DSA - Saving A/C"),
+            ("BCA", "BCA - Current A/C - other branch"),
+            ("BSA", "BSA - Saving A/C - other branch"),
+            ("FCA", "FCA - Foreign cur. Current A/C"),
+            ("FSA", "FSA - Foreign cur. Saving A/C"),
+            ("SPD", "SPD - Suspense debtor"),
+            ("SPC", "SPC - Suspense creditor"),
+            ("UST", "UST - Unsettled"),
+            ("OFA", "OFA - Offline Account"),
+            ("FWD", "FWD - Forward Value"),
+        ],
+        ondelete={
+            "CSH": "cascade",
+            "BCQ": "cascade",
+            "HCQ": "cascade",
+            "DCA": "cascade",
+            "DSA": "cascade",
+            "BCA": "cascade",
+            "BSA": "cascade",
+            "FCA": "cascade",
+            "FSA": "cascade",
+            "SPD": "cascade",
+            "SPC": "cascade",
+            "UST": "cascade",
+            "OFA": "cascade",
+            "FWD": "cascade",
+        },
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -340,14 +475,13 @@ class BankPaymentExport(models.Model):
     def _get_wht_header2(self, wht_cert):
         if not self.scb_is_wht_present:
             return "".ljust(49)
-        pay_type = "0"
-        if wht_cert.tax_payer == "withholding":
-            pay_type = "3"
-        elif wht_cert.tax_payer == "paid_one_time":
-            pay_type = "1"
+        mapping_tax_payer = {
+            "withholding": "3",
+            "paid_one_time": "1",
+        }
         text = "{pay_type}{wht_remark}{wht_deduct_date}".format(
-            pay_type=pay_type,
-            wht_remark="".ljust(40),
+            pay_type=mapping_tax_payer.get(wht_cert.tax_payer),
+            wht_remark="".ljust(40),  # NOTE: System is not type 4
             wht_deduct_date=wht_cert.date.strftime("%Y%m%d"),
         )
         return text
@@ -363,6 +497,11 @@ class BankPaymentExport(models.Model):
             invoice_total_amount=invoice_total_amount,
         )
         return text
+
+    def _get_service_type(self):
+        if self.scb_product_code == "BNT":
+            return self.scb_service_type_bahtnet
+        return self.scb_service_type
 
     def _get_text_header_scb(self):
         self.ensure_one()
@@ -407,8 +546,8 @@ class BankPaymentExport(models.Model):
                 fee_debit_account=account_bank_payment.ljust(15),
                 filler="".ljust(9),
                 mcl_type=self._get_mcl_type(),
-                account_type_fee=account_type,
-                debit_branch_code_fee=branch_code,
+                account_type_fee=account_type.zfill(2),
+                debit_branch_code_fee=branch_code.zfill(4),
             )
         )
         return text
@@ -438,11 +577,11 @@ class BankPaymentExport(models.Model):
                 credit_account=receiver_acc_number.ljust(25),
                 credit_amount=line_batch_amount,
                 internal_ref=self._get_reference().ljust(8),
-                wht_present="N",
-                invoice_detail_present="N",
-                credit_advice_required="Y",
+                wht_present=self.scb_is_wht_present,
+                invoice_detail_present=self.scb_is_invoice_present,
+                credit_advice_required=self.scb_is_credit_advice,
                 delivery_mode=self.scb_delivery_mode,
-                pickup_location="",  # TODO
+                pickup_location=self.scb_pickup_location.ljust(4),
                 wht_header=self._get_wht_header(wht_cert),  # WHT Form Type - Total WHT
                 invoice_number=self._get_invoice_header(invoices),
                 wht_header2=self._get_wht_header2(wht_cert),  # Pay Type - Deduct Date
@@ -450,13 +589,13 @@ class BankPaymentExport(models.Model):
                 receiver_bank_name=pe_line.payment_partner_bank_id.bank_id.name,
                 receiver_branch_code="".zfill(4),  # TODO
                 receiver_branch_name="".ljust(35),  # TODO
-                wht_signatory="B",
+                wht_signatory=self.scb_wht_signatory,
                 notification=self.scb_beneficiary_noti,
                 customer_ref="".ljust(20),  # TODO
-                cheque_ref="".ljust(1),  # TODO
-                payment_type_code="".ljust(3),  # TODO
-                service_type="".ljust(2),
-                remark="".ljust(68),
+                cheque_ref=self.scb_cheque_ref or "".ljust(1),
+                payment_type_code=self.scb_payment_type_code or "".ljust(3),
+                service_type=self._get_service_type() or "".ljust(2),
+                remark="".ljust(68),  # NOTE: use in cheque
                 charge=mapping_charge.get(self.scb_beneficiary_charge),
             )
         )
@@ -487,10 +626,10 @@ class BankPaymentExport(models.Model):
                 payee_address1=receiver_address1.ljust(70),
                 payee_address2=receiver_address2.ljust(70),
                 payee_address3="".ljust(70),
-                payee_tax_id="".ljust(10),
+                payee_tax_id="".ljust(10),  # TODO
                 payee_name_eng=self._get_payee_name_eng(pe_line).ljust(70),
-                payee_fax=self._get_payee_fax(),  # TODO: why numeric?
-                payee_sms=self._get_payee_sms(),  # TODO: why numeric?
+                payee_fax=self._get_payee_fax().zfill(10),
+                payee_sms=self._get_payee_sms().zfill(10),
                 payee_email=self._get_payee_email().ljust(64),
                 # TODO
                 space="".ljust(310),
@@ -609,32 +748,57 @@ class BankPaymentExport(models.Model):
         )
         return ctx
 
-    # def _check_constraint_confirm(self):
-    #     res = super()._check_constraint_confirm()
-    #     for rec in self.filtered(lambda l: l.bank == "SICOTHBK"):
-    #         if not rec.ktb_bank_type:
-    #             raise UserError(_("You need to add 'Bank Type' before confirm."))
-    #         if rec.ktb_bank_type == "direct" and any(
-    #             line.payment_bank_id.bic != rec.bank for line in rec.export_line_ids
-    #         ):
-    #             raise UserError(
-    #                 _("Bank type '{}' can not export payment to other bank.").format(
-    #                     dict(self._fields["ktb_bank_type"].selection).get(
-    #                         self.ktb_bank_type
-    #                     )
-    #                 )
-    #             )
-    #         if rec.ktb_bank_type == "standard" and any(
-    #             line.payment_bank_id.bic == rec.bank for line in rec.export_line_ids
-    #         ):
-    #             raise UserError(
-    #                 _("Bank type '{}' can not export payment to the same bank.").format(
-    #                     dict(self._fields["ktb_bank_type"].selection).get(
-    #                         self.ktb_bank_type
-    #                     )
-    #                 )
-    #             )
-    #     return res
+    @api.onchange("scb_delivery_mode")
+    def onchange_scb_delivery_mode(self):
+        if self.scb_delivery_mode == "S" and self.scb_product_code in [
+            "MCP",
+            "DDP",
+            "CCP",
+        ]:
+            raise UserError(
+                _(
+                    "The product codes 'MCP', 'DDP', and 'CCP' are not allowed "
+                    "to be used with the 'SCBBusinessNet' delivery mode."
+                )
+            )
+
+    @api.onchange("scb_product_code")
+    def onchange_scb_product_code(self):
+        if self.scb_product_code not in ("MCP", "DDP", "CCP"):
+            self.scb_cheque_ref = False
+        if self.scb_product_code != "BNT":
+            self.scb_payment_type_code = False
+            self.scb_service_type_bahtnet = False
+        if self.scb_product_code not in ("MCL", "PA4", "PA5", "PA6"):
+            self.scb_service_type = False
+
+    def _check_constraint_confirm(self):
+        res = super()._check_constraint_confirm()
+        for rec in self.filtered(lambda l: l.bank == "SICOTHBK"):
+            rec.onchange_scb_delivery_mode()
+            # if not rec.ktb_bank_type:
+            #     raise UserError(_("You need to add 'Bank Type' before confirm."))
+            # if rec.ktb_bank_type == "direct" and any(
+            #     line.payment_bank_id.bic != rec.bank for line in rec.export_line_ids
+            # ):
+            #     raise UserError(
+            #         _("Bank type '{}' can not export payment to other bank.").format(
+            #             dict(self._fields["ktb_bank_type"].selection).get(
+            #                 self.ktb_bank_type
+            #             )
+            #         )
+            #     )
+            # if rec.ktb_bank_type == "standard" and any(
+            #     line.payment_bank_id.bic == rec.bank for line in rec.export_line_ids
+            # ):
+            #     raise UserError(
+            #         _("Bank type '{}' can not export payment to the same bank.").format(
+            #             dict(self._fields["ktb_bank_type"].selection).get(
+            #                 self.ktb_bank_type
+            #             )
+            #         )
+            #     )
+        return res
 
     # def _get_context_create_bank_payment_export(self, payments):
     #     ctx = super()._get_context_create_bank_payment_export(payments)

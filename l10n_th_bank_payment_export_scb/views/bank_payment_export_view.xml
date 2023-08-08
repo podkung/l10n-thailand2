@@ -16,15 +16,28 @@
             >
                 <field name="scb_is_editable" invisible="1" />
                 <field
-                    name="scb_bank_type"
-                    string="Bank Type"
-                    widget="radio"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
-                />
-                <field
                     name="scb_product_code"
                     string="Product Code"
                     attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
+                />
+                <field
+                    name="scb_bank_type"
+                    string="Bank Type"
+                    widget="radio"
+                    attrs="{
+                        'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', '!=', 'MCL')],
+                        'required': [('scb_is_editable', '!=', False), ('scb_product_code', '=', 'MCL')]
+                    }"
+                />
+                <field
+                    name="scb_cheque_ref"
+                    string="Cheque Reference"
+                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', 'not in', ['MCP', 'DDP', 'CCP'])], 'required': [('scb_is_editable', '!=', False), ('scb_product_code', 'in', ['MCP', 'DDP', 'CCP'])]}"
+                />
+                <field
+                    name="scb_payment_type_code"
+                    string="Payment Type"
+                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', '!=', 'BNT')], 'required': [('scb_is_editable', '!=', False), ('scb_product_code', '=', 'BNT')]}"
                 />
                 <field
                     name="scb_delivery_mode"
@@ -73,33 +86,6 @@
                         'required': [('scb_is_editable', '!=', False), ('scb_product_code', '=', 'BNT')]
                     }"
                 />
-                <label
-                    for="scb_is_invoice_present"
-                    string="Print Invoice?"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
-                />
-                <div>
-                    <field
-                        name="scb_is_invoice_present"
-                        class="oe_inline"
-                        attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
-                    />
-                    <field
-                        name="scb_invoice_language"
-                        class="oe_inline"
-                        attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_is_invoice_present', '=', False)], 'required': [('scb_is_invoice_present', '!=', False)]}"
-                    />
-                </div>
-                <field
-                    name="scb_is_wht_present"
-                    string="Print WHT?"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
-                />
-                <field
-                    name="scb_is_credit_advice"
-                    string="Print Credit Advice?"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
-                />
             </xpath>
             <xpath
                 expr="//page[@name='information']//group[@name='right_information']"
@@ -133,6 +119,48 @@
                     name="scb_beneficiary_charge"
                     string="Charge"
                     attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
+                />
+                <label
+                    for="scb_is_invoice_present"
+                    string="Print Invoice?"
+                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
+                />
+                <div>
+                    <field
+                        name="scb_is_invoice_present"
+                        class="oe_inline"
+                        attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
+                    />
+                    <field
+                        name="scb_invoice_language"
+                        class="oe_inline"
+                        attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_is_invoice_present', '=', False)], 'required': [('scb_is_invoice_present', '!=', False)]}"
+                    />
+                </div>
+                <label
+                    for="scb_is_wht_present"
+                    string="Print WHT?"
+                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
+                />
+                <div>
+                    <field
+                        name="scb_is_wht_present"
+                        class="oe_inline"
+                        attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
+                    />
+                    <span
+                        attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_is_wht_present', '=', False)]}"
+                    >Signatory = </span>
+                    <field
+                        name="scb_wht_signatory"
+                        class="oe_inline"
+                        attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_is_wht_present', '=', False)], 'required': [('scb_is_wht_present', '!=', False)]}"
+                    />
+                </div>
+                <field
+                    name="scb_is_credit_advice"
+                    string="Print Credit Advice?"
+                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
                 />
             </xpath>
             <xpath
