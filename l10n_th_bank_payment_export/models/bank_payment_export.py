@@ -23,6 +23,13 @@ class BankPaymentExport(models.Model):
         states={"draft": [("readonly", False)]},
         tracking=True,
     )
+    template_id = fields.Many2one(
+        comodel_name="bank.payment.template",
+        string="Template",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+        tracking=True,
+    )
     effective_date = fields.Date(
         copy=False,
         readonly=True,
@@ -63,6 +70,15 @@ class BankPaymentExport(models.Model):
         default="draft",
         tracking=True,
     )
+
+    @api.onchange("template_id")
+    def _onchange_template_id(self):
+        """Update field following bank payment template"""
+        template = self.template_id
+        if template:
+            self.bank = template.bank
+            for line in template.template_config_line:
+                self[line.field_id.name] = line.value
 
     @api.depends("bank")
     def _compute_required_effective_date(self):
@@ -217,29 +233,18 @@ class BankPaymentExport(models.Model):
         export_lines = [(0, 0, {"payment_id": payment}) for payment in payments.ids]
         payment_bic_bank = list(set(payments.mapped("journal_id.bank_id.bic")))
         payment_bank = len(payment_bic_bank) == 1 and payment_bic_bank[0] or []
-        # Default config from journal
-        bank_payment_config = payments.mapped(
-            "journal_id"
-        ).payment_export_config_ids.filtered(lambda l: l.bank == payment_bank)
-        for config in bank_payment_config:
-            ctx.update({"default_{}".format(config.field_id.name): config.id})
         ctx.update(
             {
+                "default_template_id": payments[0].bank_payment_template_id.id,
                 "default_bank": payment_bank,
                 "default_export_line_ids": export_lines,
             }
         )
         return ctx
 
-    @api.model
-    def _default_common_config(self, field):
-        field_default_duplicate = self.env["bank.payment.config"].search(
-            [
-                ("field_id.name", "=", field),
-                ("is_default", "=", True),
-            ]
-        )
-        return field_default_duplicate
+    def _get_amount_no_decimal(self, amount):
+        """Implementation is available"""
+        return amount
 
     @api.constrains("effective_date")
     def check_effective_date(self):
@@ -267,7 +272,12 @@ class BankPaymentExport(models.Model):
 
     def _check_constraint_create_bank_payment_export(self, payments):
         method_manual_out = self.env.ref("account.account_payment_method_manual_out")
+        comment_template = payments[0].bank_payment_template_id
         for payment in payments:
+            if payment.bank_payment_template_id != comment_template:
+                raise UserError(
+                    _("All payments must have the same bank payment template.")
+                )
             if (
                 payment.payment_method_id.id != method_manual_out.id
                 or payment.journal_id.type != "bank"
@@ -296,6 +306,8 @@ class BankPaymentExport(models.Model):
         payments = self.env["account.payment"].browse(
             self.env.context.get("active_ids", [])
         )
+        if not payments:
+            return
         self._check_constraint_create_bank_payment_export(payments)
         ctx = self._get_context_create_bank_payment_export(payments)
         return {

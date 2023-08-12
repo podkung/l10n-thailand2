@@ -11,13 +11,18 @@ class AccountPaymentRegister(models.TransientModel):
         string="Bank Payment Exported",
         help="if checked, it means the money has already been sent to the bank.",
     )
+    bank_payment_template_id = fields.Many2one(
+        comodel_name="bank.payment.template",
+    )
 
     def _create_payment_vals_from_wizard(self):
         payment_vals = super()._create_payment_vals_from_wizard()
         payment_vals["export_status"] = self.is_export and "exported" or "draft"
+        payment_vals["bank_payment_template_id"] = self.bank_payment_template_id.id
         return payment_vals
 
     def _create_payment_vals_from_batch(self, batch_result):
         payment_vals = super()._create_payment_vals_from_batch(batch_result)
         payment_vals["export_status"] = self.is_export and "exported" or "draft"
+        payment_vals["bank_payment_template_id"] = self.bank_payment_template_id.id
         return payment_vals

@@ -84,6 +84,7 @@
                     </div>
                     <group>
                         <group name="left_header">
+                            <field name="template_id" />
                             <field name="bank" />
                         </group>
                         <group name="right_header">

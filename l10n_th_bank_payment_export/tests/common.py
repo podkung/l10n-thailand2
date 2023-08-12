@@ -1,124 +1,129 @@
 # Copyright 2021 Ecosoft Co., Ltd (http://ecosoft.co.th/)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html)
 
+from odoo_test_helper import FakeModelLoader
+
 from odoo import fields
 from odoo.tests.common import TransactionCase
 
 
 class CommonBankPaymentExport(TransactionCase):
-    def setUp(self):
-        super().setUp()
-        self.move_model = self.env["account.move"]
-        self.journal_model = self.env["account.journal"]
-        self.bank_payment_config_model = self.env["bank.payment.config"]
-        self.bank_payment_export_model = self.env["bank.payment.export"]
-        self.register_payments_model = self.env["account.payment.register"]
-        self.main_company_id = self.env.ref("base.main_company").id
-        self.main_currency_id = self.env.ref("base.USD").id
-        # Active multi-currency
-        currency_EUR = self.env.ref("base.EUR")
-        currency_EUR.active = True
-        self.currency_id = currency_EUR.id
-        self.env.cr.execute(
-            """UPDATE res_company SET currency_id = %s
-            WHERE id = %s""",
-            (self.main_currency_id, self.main_company_id),
-        )
-        self.product_1 = self.env.ref("product.product_product_4")
-        self.journal_bank = self.journal_model.search([("type", "=", "bank")], limit=1)
-        self.journal_cash = self.journal_model.search([("type", "=", "cash")], limit=1)
-        # Create Recipient Bank and default partner
-        self.partner_1 = self.env.ref("base.res_partner_2")
-        self.partner_2 = self.env.ref("base.res_partner_3")
-        self.partner_bank_model = self.env["res.partner.bank"]
-        self.bank_bnp = self.env.ref("base.bank_bnp")
-        self.bank_ing = self.env.ref("base.bank_ing")
-        self.partner_company = self.create_partner_bank(
-            "A000Test", self.env.company.partner_id, self.bank_ing
-        )
-        self.partner1_bank_bnp = self.create_partner_bank(
-            "A001Test", self.partner_1, self.bank_bnp
-        )
-        self.partner1_bank_ing = self.create_partner_bank(
-            "A002Test", self.partner_1, self.bank_ing
-        )
-        self.partner2_bank_ing = self.create_partner_bank(
-            "A003Test", self.partner_2, self.bank_ing
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.loader = FakeModelLoader(cls.env, cls.__module__)
+        cls.loader.backup_registry()
+        from .bank_payment_export_tester import (
+            BankPaymentExportTester,
+            BankPaymentTemplateTester,
         )
 
-        self.payment_method_manual_in = self.env.ref(
+        cls.loader.update_registry((BankPaymentExportTester, BankPaymentTemplateTester))
+
+        cls.move_model = cls.env["account.move"]
+        cls.journal_model = cls.env["account.journal"]
+        cls.bank_payment_template_model = cls.env["bank.payment.template"]
+        cls.bank_payment_export_model = cls.env["bank.payment.export"]
+        cls.field_model = cls.env["ir.model.fields"]
+        cls.register_payments_model = cls.env["account.payment.register"]
+        cls.main_company_id = cls.env.ref("base.main_company").id
+        cls.main_currency_id = cls.env.ref("base.USD").id
+        # Active multi-currency
+        currency_EUR = cls.env.ref("base.EUR")
+        currency_EUR.active = True
+        cls.currency_id = currency_EUR.id
+        cls.env.cr.execute(
+            """UPDATE res_company SET currency_id = %s
+            WHERE id = %s""",
+            (cls.main_currency_id, cls.main_company_id),
+        )
+        cls.product_1 = cls.env.ref("product.product_product_4")
+        cls.journal_bank = cls.journal_model.search([("type", "=", "bank")], limit=1)
+        cls.journal_cash = cls.journal_model.search([("type", "=", "cash")], limit=1)
+        # Create Recipient Bank and default partner
+        cls.partner_1 = cls.env.ref("base.res_partner_2")
+        cls.partner_2 = cls.env.ref("base.res_partner_3")
+        cls.partner_bank_model = cls.env["res.partner.bank"]
+        cls.bank_bnp = cls.env.ref("base.bank_bnp")
+        cls.bank_ing = cls.env.ref("base.bank_ing")
+        cls.partner_company = cls.create_partner_bank(
+            cls, "A000Test", cls.env.company.partner_id, cls.bank_ing
+        )
+        cls.partner1_bank_bnp = cls.create_partner_bank(
+            cls, "A001Test", cls.partner_1, cls.bank_bnp
+        )
+        cls.partner1_bank_ing = cls.create_partner_bank(
+            cls, "A002Test", cls.partner_1, cls.bank_ing
+        )
+        cls.partner2_bank_ing = cls.create_partner_bank(
+            cls, "A003Test", cls.partner_2, cls.bank_ing
+        )
+
+        cls.payment_method_manual_in = cls.env.ref(
             "account.account_payment_method_manual_in"
         )
-        self.payment_method_manual_out = self.env.ref(
+        cls.payment_method_manual_out = cls.env.ref(
             "account.account_payment_method_manual_out"
         )
-        self.payment_method_check = self.env.ref(
+        cls.payment_method_check = cls.env.ref(
             "account_check_printing.account_payment_method_check"
         )
         # create invoice to payment
-        self.payment1_out_journal_bank = self.create_invoice_payment(
+        cls.payment1_out_journal_bank = cls.create_invoice_payment(
+            cls,
             amount=100,
-            currency_id=self.main_currency_id,
-            payment_method=self.payment_method_manual_out,
-            partner=self.partner_1,
-            journal=self.journal_bank,
+            currency_id=cls.main_currency_id,
+            payment_method=cls.payment_method_manual_out,
+            partner=cls.partner_1,
+            journal=cls.journal_bank,
+            init=True,
         )
-        self.payment2_out_journal_cash = self.create_invoice_payment(
+        cls.payment2_out_journal_cash = cls.create_invoice_payment(
+            cls,
             amount=100,
-            currency_id=self.main_currency_id,
-            payment_method=self.payment_method_manual_out,
-            partner=self.partner_1,
-            journal=self.journal_cash,
+            currency_id=cls.main_currency_id,
+            payment_method=cls.payment_method_manual_out,
+            partner=cls.partner_1,
+            journal=cls.journal_cash,
+            init=True,
         )
-        self.payment3_out_method_check = self.create_invoice_payment(
+        cls.payment3_out_method_check = cls.create_invoice_payment(
+            cls,
             amount=200,
-            currency_id=self.main_currency_id,
-            payment_method=self.payment_method_check,
-            partner=self.partner_1,
-            journal=self.journal_bank,
+            currency_id=cls.main_currency_id,
+            payment_method=cls.payment_method_check,
+            partner=cls.partner_1,
+            journal=cls.journal_bank,
+            init=True,
         )
-        self.payment4_out_currency = self.create_invoice_payment(
+        cls.payment4_out_currency = cls.create_invoice_payment(
+            cls,
             amount=300,
-            currency_id=self.currency_id,
-            payment_method=self.payment_method_manual_out,
-            partner=self.partner_1,
-            journal=self.journal_bank,
+            currency_id=cls.currency_id,
+            payment_method=cls.payment_method_manual_out,
+            partner=cls.partner_1,
+            journal=cls.journal_bank,
+            init=True,
         )
-        self.payment5_in = self.create_invoice_payment(
+        cls.payment5_in = cls.create_invoice_payment(
+            cls,
             amount=400,
             inv_type="out_invoice",
-            currency_id=self.main_currency_id,
-            payment_method=self.payment_method_manual_in,
-            partner=self.partner_1,
-            journal=self.journal_bank,
+            currency_id=cls.main_currency_id,
+            payment_method=cls.payment_method_manual_in,
+            partner=cls.partner_1,
+            journal=cls.journal_bank,
+            init=True,
         )
-        self.payment6_out_partner = self.create_invoice_payment(
+        cls.payment6_out_partner = cls.create_invoice_payment(
+            cls,
             amount=600,
-            currency_id=self.main_currency_id,
-            payment_method=self.payment_method_manual_out,
-            partner=self.partner_2,
-            journal=self.journal_bank,
+            currency_id=cls.main_currency_id,
+            payment_method=cls.payment_method_manual_out,
+            partner=cls.partner_2,
+            journal=cls.journal_bank,
+            init=True,
         )
-
-    def create_bank_payment_config(self, name, field_name, value, bank, default=False):
-        field_id = self.env["ir.model.fields"].search(
-            [
-                ("model", "=", "bank.payment.export"),
-                ("ttype", "=", "many2one"),
-                ("relation", "=", "bank.payment.config"),
-                ("name", "=", field_name),
-            ]
-        )
-        bank_config_id = self.bank_payment_config_model.create(
-            {
-                "name": name,
-                "bank": bank,
-                "field_id": field_id.id,
-                "value": value,
-                "is_default": default,
-            }
-        )
-        return bank_config_id
 
     def create_partner_bank(self, acc_number, partner, bank):
         return self.partner_bank_model.create(
@@ -164,11 +169,23 @@ class CommonBankPaymentExport(TransactionCase):
         partner=False,
         journal=False,
         is_export=False,
+        bank_payment_template_id=False,
         multi=False,
+        init=False,
     ):
-        invoice = self.create_invoice(amount, inv_type, currency_id, partner)
+        # For init class
+        if init:
+            invoice = self.create_invoice(self, amount, inv_type, currency_id, partner)
+        else:
+            invoice = self.create_invoice(amount, inv_type, currency_id, partner)
         if multi:
-            invoice2 = self.create_invoice(amount, inv_type, currency_id, partner)
+            # For init class
+            if init:
+                invoice2 = self.create_invoice(
+                    self, amount, inv_type, currency_id, partner
+                )
+            else:
+                invoice2 = self.create_invoice(amount, inv_type, currency_id, partner)
             invoice += invoice2
         ctx = {"active_model": "account.move", "active_ids": invoice.ids}
         register_payments = self.register_payments_model.with_context(**ctx).create(
@@ -179,6 +196,7 @@ class CommonBankPaymentExport(TransactionCase):
                 "partner_bank_id": invoice.partner_bank_id.id,
                 "payment_date": fields.Date.today(),
                 "is_export": is_export,
+                "bank_payment_template_id": bank_payment_template_id,
             }
         )
         payment_list = register_payments.action_create_payments()
