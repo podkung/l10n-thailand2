@@ -13,27 +13,14 @@ class BankPaymentExport(models.Model):
         ondelete={"KRTHTHBK": "cascade"},
     )
     # Configuration
-    config_ktb_company_id = fields.Many2one(
-        comodel_name="bank.payment.config",
+    ktb_company_id = fields.Char(
         string="KTB Company ID",
-        default=lambda self: self._default_common_config("config_ktb_company_id"),
         readonly=True,
         states={"draft": [("readonly", False)]},
-        help="""
-            You can config this field from menu
-            Invoicing > Configuration > Payments > Bank Payment Configuration
-        """,
     )
-    config_ktb_sender_name = fields.Many2one(
-        comodel_name="bank.payment.config",
-        string="KTB Sender Name",
-        default=lambda self: self._default_common_config("config_ktb_sender_name"),
+    ktb_sender_name = fields.Char(
         readonly=True,
         states={"draft": [("readonly", False)]},
-        help="""
-            You can config this field from menu
-            Invoicing > Configuration > Payments > Bank Payment Configuration
-        """,
     )
     # filter
     ktb_is_editable = fields.Boolean(
@@ -130,7 +117,7 @@ class BankPaymentExport(models.Model):
             export.ktb_is_editable = True if export.bank == "KRTHTHBK" else False
 
     def _get_ktb_sender_name(self):
-        return self.config_ktb_sender_name.value or self.env.company.display_name
+        return self.ktb_sender_name
 
     def _get_ktb_receiver_info(self, pe_line):
         return "".ljust(8)
@@ -168,9 +155,7 @@ class BankPaymentExport(models.Model):
         return "0".zfill(4)
 
     def _get_text_header_ktb(self, payment_lines):
-        ktb_company_id = (
-            self.config_ktb_company_id.value or "**Company ID on KTB is not config**"
-        )
+        ktb_company_id = self.ktb_company_id or "**Company ID on KTB is not config**"
         total_batch = len(payment_lines.ids)
         total_amount = sum(payment_lines.mapped("payment_amount"))
         total_batch_amount = payment_lines._get_amount_no_decimal(total_amount)
