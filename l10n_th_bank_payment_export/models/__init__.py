@@ -6,4 +6,3 @@ from . import account_payment
 from . import account_journal
 from . import bank_payment_export_line
 from . import bank_payment_export
-from . import res_partner_bank
