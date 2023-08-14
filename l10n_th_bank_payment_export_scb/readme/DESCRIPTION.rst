@@ -1,1 +1,1 @@
-This module extends the functionality of Bank Export Payment to support a KTB.
+This module extends the functionality of Bank Export Payment to support a SCB.

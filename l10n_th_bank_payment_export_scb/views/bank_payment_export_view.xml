@@ -81,6 +81,7 @@
                 />
                 <field
                     name="scb_service_type_bahtnet"
+                    string="Service Type (BahtNet)"
                     attrs="{
                         'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', '!=', 'BNT')],
                         'required': [('scb_is_editable', '!=', False), ('scb_product_code', '=', 'BNT')]
@@ -117,12 +118,12 @@
                 </div>
                 <field
                     name="scb_beneficiary_charge"
-                    string="Charge"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
+                    string="Beneficiary Charge"
+                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
                 />
                 <label
                     for="scb_is_invoice_present"
-                    string="Print Invoice?"
+                    string="Invoice Details Present"
                     attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
                 />
                 <div>
@@ -139,7 +140,7 @@
                 </div>
                 <label
                     for="scb_is_wht_present"
-                    string="Print WHT?"
+                    string="WHT Present"
                     attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
                 />
                 <div>
@@ -159,7 +160,7 @@
                 </div>
                 <field
                     name="scb_is_credit_advice"
-                    string="Print Credit Advice?"
+                    string="Credit Advice Required"
                     attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
                 />
             </xpath>
@@ -168,9 +169,7 @@
                 position="inside"
             >
                 <field
-                    name="config_scb_company_id"
-                    options="{'no_create': True, 'no_create_edit': True}"
-                    domain="[('field_id.name', '=', 'config_scb_company_id')]"
+                    name="scb_company_id"
                     attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
                 />
             </xpath>

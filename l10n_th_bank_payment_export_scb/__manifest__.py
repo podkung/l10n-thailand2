@@ -12,9 +12,7 @@
     "depends": ["account", "l10n_th_bank_payment_export"],
     "data": [
         "data/report_action.xml",
-        "views/account_payment_view.xml",
         "views/bank_payment_export_view.xml",
-        "wizards/account_payment_register_views.xml",
     ],
     "installable": True,
     "development_status": "Alpha",

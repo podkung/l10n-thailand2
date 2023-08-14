@@ -14,21 +14,14 @@ class BankPaymentExport(models.Model):
         selection_add=[("SICOTHBK", "SCB")],
         ondelete={"SICOTHBK": "cascade"},
     )
-    # Configuration
-    config_scb_company_id = fields.Many2one(
-        comodel_name="bank.payment.config",
+    scb_company_id = fields.Char(
         string="SCB Company ID",
-        default=lambda self: self._default_common_config("config_scb_company_id"),
         readonly=True,
         states={"draft": [("readonly", False)]},
-        help="""
-            You can config this field from menu
-            Invoicing > Configuration > Payments > Bank Payment Configuration
-        """,
     )
     # filter
     scb_is_editable = fields.Boolean(
-        compute="_compute_ktb_editable",
+        compute="_compute_scb_editable",
         string="SCB Editable",
     )
     scb_bank_type = fields.Selection(
@@ -225,14 +218,8 @@ class BankPaymentExport(models.Model):
             "22": "cascade",
             "23": "cascade",
         },
-        string="Service Type (BahtNet)",
     )
-    scb_beneficiary_charge = fields.Selection(
-        selection=[("B", "Beneficiary Charge"), ("C", "Customer Charge")],
-        ondelete={
-            "B": "cascade",
-            "C": "cascade",
-        },
+    scb_beneficiary_charge = fields.Boolean(
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -401,7 +388,7 @@ class BankPaymentExport(models.Model):
         return res
 
     @api.depends("bank")
-    def _compute_ktb_editable(self):
+    def _compute_scb_editable(self):
         for export in self:
             export.scb_is_editable = True if export.bank == "SICOTHBK" else False
 
@@ -505,9 +492,7 @@ class BankPaymentExport(models.Model):
 
     def _get_text_header_scb(self):
         self.ensure_one()
-        scb_company_id = (
-            self.config_scb_company_id.value or "**Company ID on SCB is not config**"
-        )
+        scb_company_id = self.scb_company_id or "**Company ID on SCB is not config**"
         today = fields.Datetime.context_timestamp(self.env.user, datetime.now())
         file_date = today.strftime("%Y%m%d")
         file_time = today.strftime("%H%M%S")
@@ -529,6 +514,8 @@ class BankPaymentExport(models.Model):
         account_bank_payment = self.export_line_ids[
             0
         ].payment_journal_id.bank_account_id.acc_number
+        if not account_bank_payment:
+            account_bank_payment = "-------------------------"
         account_type = "0{}".format(account_bank_payment[3])
         branch_code = "0{}".format(account_bank_payment[0:3])
         text = (
@@ -562,10 +549,6 @@ class BankPaymentExport(models.Model):
             receiver_branch_code,
             receiver_acc_number,
         ) = pe_line._get_receiver_information()
-        mapping_charge = {
-            "B": "B",
-            "C": " ",
-        }
         text = (
             "003{idx}{credit_account}{credit_amount}THB{internal_ref}{wht_present}"
             "{invoice_detail_present}{credit_advice_required}{delivery_mode}"
@@ -581,7 +564,7 @@ class BankPaymentExport(models.Model):
                 invoice_detail_present=self.scb_is_invoice_present,
                 credit_advice_required=self.scb_is_credit_advice,
                 delivery_mode=self.scb_delivery_mode,
-                pickup_location=self.scb_pickup_location.ljust(4),
+                pickup_location=(self.scb_pickup_location or "").ljust(4),
                 wht_header=self._get_wht_header(wht_cert),  # WHT Form Type - Total WHT
                 invoice_number=self._get_invoice_header(invoices),
                 wht_header2=self._get_wht_header2(wht_cert),  # Pay Type - Deduct Date
@@ -596,7 +579,7 @@ class BankPaymentExport(models.Model):
                 payment_type_code=self.scb_payment_type_code or "".ljust(3),
                 service_type=self._get_service_type() or "".ljust(2),
                 remark="".ljust(68),  # NOTE: use in cheque
-                charge=mapping_charge.get(self.scb_beneficiary_charge),
+                charge="B" if self.scb_beneficiary_charge else "C",
             )
         )
         return text
@@ -696,13 +679,19 @@ class BankPaymentExport(models.Model):
         text = self._get_text_header_scb()
         total_batch_amount = self._get_amount_no_decimal(self.total_amount)
         text += self._get_text_company_detail_scb(payment_lines, total_batch_amount)
+        # Check module install 'l10n_th_account_tax'
+        wht = hasattr(self.env["account.payment"], "wht_cert_ids")
         # Details
         for idx, pe_line in enumerate(payment_lines):
             # This amount related decimal from invoice, Odoo invoice do not rounding.
             payment_net_amount = pe_line._get_payment_net_amount()
             line_batch_amount = pe_line._get_amount_no_decimal(payment_net_amount)
-            wht_cert = pe_line.payment_id.wht_cert_ids.filtered(
-                lambda l: l.state == "done"
+            wht_cert = (
+                wht
+                and pe_line.payment_id.wht_cert_ids.filtered(
+                    lambda l: l.state == "done"
+                )
+                or False
             )
             invoices = pe_line.payment_id.reconciled_bill_ids
             text += self._get_text_credit_detail_scb(
@@ -735,19 +724,6 @@ class BankPaymentExport(models.Model):
             return "l10n_th_bank_payment_export_scb.action_payment_scb_txt"
         return super()._get_view_report_text()
 
-    def _get_context_create_bank_payment_export(self, payments):
-        ctx = super()._get_context_create_bank_payment_export(payments)
-        ctx.update(
-            {
-                "default_scb_product_code": payments.scb_product_code,
-                "default_scb_service_type": payments.scb_service_type,
-                "default_scb_service_type_bahtnet": payments.scb_service_type_bahtnet,
-                "default_scb_delivery_mode": payments.scb_delivery_mode,
-                "default_scb_pickup_location": payments.scb_pickup_location,
-            }
-        )
-        return ctx
-
     @api.onchange("scb_delivery_mode")
     def onchange_scb_delivery_mode(self):
         if self.scb_delivery_mode == "S" and self.scb_product_code in [
@@ -776,50 +752,4 @@ class BankPaymentExport(models.Model):
         res = super()._check_constraint_confirm()
         for rec in self.filtered(lambda l: l.bank == "SICOTHBK"):
             rec.onchange_scb_delivery_mode()
-            # if not rec.ktb_bank_type:
-            #     raise UserError(_("You need to add 'Bank Type' before confirm."))
-            # if rec.ktb_bank_type == "direct" and any(
-            #     line.payment_bank_id.bic != rec.bank for line in rec.export_line_ids
-            # ):
-            #     raise UserError(
-            #         _("Bank type '{}' can not export payment to other bank.").format(
-            #             dict(self._fields["ktb_bank_type"].selection).get(
-            #                 self.ktb_bank_type
-            #             )
-            #         )
-            #     )
-            # if rec.ktb_bank_type == "standard" and any(
-            #     line.payment_bank_id.bic == rec.bank for line in rec.export_line_ids
-            # ):
-            #     raise UserError(
-            #         _("Bank type '{}' can not export payment to the same bank.").format(
-            #             dict(self._fields["ktb_bank_type"].selection).get(
-            #                 self.ktb_bank_type
-            #             )
-            #         )
-            #     )
         return res
-
-    # def _get_context_create_bank_payment_export(self, payments):
-    #     ctx = super()._get_context_create_bank_payment_export(payments)
-    #     partner_bic_bank = list(set(payments.mapped("partner_bank_id.bank_id.bic")))
-    #     # KTB Bank
-    #     if partner_bic_bank and ctx["default_bank"] == "KRTHTHBK":
-    #         # Same bank
-    #         if len(partner_bic_bank) == 1 and partner_bic_bank[0] == "KRTHTHBK":
-    #             ctx.update({"default_ktb_bank_type": "direct"})
-    #         # Other bank
-    #         elif "KRTHTHBK" not in partner_bic_bank:
-    #             ctx.update({"default_ktb_bank_type": "standard"})
-    #     return ctx
-
-    # def _check_constraint_create_bank_payment_export(self, payments):
-    #     res = super()._check_constraint_create_bank_payment_export(payments)
-    #     payment_bic_bank = list(set(payments.mapped("journal_id.bank_id.bic")))
-    #     payment_bank = len(payment_bic_bank) == 1 and payment_bic_bank[0] or ""
-    #     # Check case KTB must have 1 journal / 1 PE
-    #     if payment_bank == "KRTHTHBK" and len(payments.mapped("journal_id")) > 1:
-    #         raise UserError(
-    #             _("KTB can create bank payment export 1 Journal / 1 Payment Export.")
-    #         )
-    #     return res
