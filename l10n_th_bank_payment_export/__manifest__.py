@@ -20,6 +20,7 @@
         "views/account_payment_view.xml",
         "views/bank_payment_export_view.xml",
         "views/res_bank_views.xml",
+        "views/partner_view.xml",
         "wizard/account_payment_register_views.xml",
     ],
     "installable": True,
