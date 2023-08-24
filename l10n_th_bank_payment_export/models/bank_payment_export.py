@@ -181,13 +181,6 @@ class BankPaymentExport(models.Model):
                         line.payment_id.name
                     )
                 )
-            acc_number = line.payment_partner_bank_id.acc_number
-            if acc_number and len(acc_number.split("-")) > 1:
-                raise UserError(
-                    _("{} can not use '-' in Recipient Bank (Account Number)").format(
-                        line.payment_id.name
-                    )
-                )
 
     def _check_constraint_confirm(self):
         # Add condition on this function
