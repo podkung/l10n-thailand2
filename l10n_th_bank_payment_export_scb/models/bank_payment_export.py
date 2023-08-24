@@ -6,6 +6,8 @@ from datetime import datetime
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+from odoo.addons.base.models.res_bank import sanitize_account_number
+
 
 class BankPaymentExport(models.Model):
     _inherit = "bank.payment.export"
@@ -26,8 +28,8 @@ class BankPaymentExport(models.Model):
     )
     scb_bank_type = fields.Selection(
         selection=[
-            ("1", "Next Day"),
-            ("2", "Same Day Afternoon"),
+            ("1", "1 - Next Day"),
+            ("2", "2 - Same Day Afternoon"),
         ],
         default="1",
         tracking=True,
@@ -72,10 +74,10 @@ class BankPaymentExport(models.Model):
     )
     scb_delivery_mode = fields.Selection(
         selection=[
-            ("M", "Mail => Send by Registered mail"),
-            ("C", "Counter => Send by messenger to Customer"),
-            ("P", "Pickup => Receiving pickup at SCB branch"),
-            ("S", "SCBBusinessNet => Send back to SCBBusinessNet"),
+            ("M", "M - Send by Registered mail"),
+            ("C", "C - Send by messenger to Customer"),
+            ("P", "P - Receiving pickup at SCB branch"),
+            ("S", "S - Send back to SCBBusinessNet"),
         ],
         ondelete={
             "M": "cascade",
@@ -118,12 +120,54 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+    scb_pickup_location_cheque = fields.Selection(
+        selection=[
+            ("C002", "C002 - Ratchayothin (CAREER@SCB)-RCP"),
+            ("C003", "C003 - Mab Ta Pud Industrial Estate br.0644"),
+            ("C004", "C004 - By Return - รับเช็คที่บริษัท"),
+            ("C005", "C005 - Phuket br.0537"),
+            ("C006", "C006 - Asok br.0032"),
+            ("C007", "C007 - Chachoengsao br.0516"),
+            ("C008", "C008 - Phra Ram IV (Sirinrat Building) br.0096"),
+            ("C009", "C009 - Thanon Cherd Wutthakat (Don Muang) br.0105"),
+            ("C010", "C010 - Laem Chabang br.0807 LAEM CHABANG INDUSTRIAL ESTATE SUB"),
+            ("C011", "C011 - By Mailing -ส่งทางไปรษณีย์"),
+            ("C012", "C012 - ลาดกระบัง"),
+            ("0111", "0111 - Ratchayothin West A"),
+            ("5190", "5190 - Energy Complex"),
+            ("5453", "5453 - G Tower"),
+            ("0870", "0870 - Amata City (Rayong) Sub Br."),
+            ("0101", "0101 - Thanon Sathon"),
+            ("0527", "0527 - Sri Racha"),
+        ],
+        ondelete={
+            "C002": "cascade",
+            "C003": "cascade",
+            "C004": "cascade",
+            "C005": "cascade",
+            "C006": "cascade",
+            "C007": "cascade",
+            "C008": "cascade",
+            "C009": "cascade",
+            "C010": "cascade",
+            "C011": "cascade",
+            "C012": "cascade",
+            "0111": "cascade",
+            "5190": "cascade",
+            "5453": "cascade",
+            "0870": "cascade",
+            "0101": "cascade",
+            "0527": "cascade",
+        },
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     scb_beneficiary_noti = fields.Selection(
         selection=[
-            ("N", "None"),
-            ("F", "Fax"),
-            ("S", "SMS"),
-            ("E", "Email"),
+            ("N", "N - None"),
+            ("F", "F - Fax"),
+            ("S", "S - SMS"),
+            ("E", "E - Email"),
         ],
         ondelete={
             "N": "cascade",
@@ -224,7 +268,7 @@ class BankPaymentExport(models.Model):
         states={"draft": [("readonly", False)]},
     )
     scb_invoice_language = fields.Selection(
-        selection=[("T", "Thai"), ("E", "English")],
+        selection=[("T", "T - Thai"), ("E", "E - English")],
         ondelete={
             "T": "cascade",
             "E": "cascade",
@@ -246,7 +290,7 @@ class BankPaymentExport(models.Model):
         states={"draft": [("readonly", False)]},
     )
     scb_wht_signatory = fields.Selection(
-        selection=[("B", "Bank"), ("C", "Corporate")],
+        selection=[("B", "B - Bank"), ("C", "C - Corporate")],
         ondelete={
             "B": "cascade",
             "C": "cascade",
@@ -257,51 +301,51 @@ class BankPaymentExport(models.Model):
     )
     scb_cheque_ref = fields.Selection(
         selection=[
-            ("1", "ใบเสร็จรับเงิน"),
-            ("2", "ใบวางบิล"),
-            ("3", "ใบเสร็จรับเงินและใบวางบิล"),
-            ("4", "ใบเสร็จรับเงินและใบกำกับภาษี"),
-            ("5", "ใบวางบิลและใบเสร็จรับเงินและใบกำกับภาษี"),
-            ("6", "สำเนาบัตรประชาชน/หนังสือเดินทาง"),
-            ("7", "สำเนาบัตรประชาชน/หนังสือเดินทาง + ใบนัดรับของรางวัล"),
-            ("8", "สำเนาบัตรประชาชน/หนังสือเดินทาง + ใบสั่งจ้าง"),
-            ("9", "สำเนาใบเสร็จรับเงิน"),
-            ("A", "เงินในเช็คใบเสร็จไม่เท่ากัน - จ่าย"),
-            ("B", "หนังสือรับรองการหักภาษีณ.ที่จ่าย."),
-            ("C", "หนังสือกรมศุลกากร"),
-            ("D", "ใบกำกับภาษี"),
+            ("1", "1 - ใบเสร็จรับเงิน"),
+            ("2", "2 - ใบวางบิล"),
+            ("3", "3 - ใบเสร็จรับเงินและใบวางบิล"),
+            ("4", "4 - ใบเสร็จรับเงินและใบกำกับภาษี"),
+            ("5", "5 - ใบวางบิลและใบเสร็จรับเงินและใบกำกับภาษี"),
+            ("6", "6 - สำเนาบัตรประชาชน/หนังสือเดินทาง"),
+            ("7", "7 - สำเนาบัตรประชาชน/หนังสือเดินทาง + ใบนัดรับของรางวัล"),
+            ("8", "8 - สำเนาบัตรประชาชน/หนังสือเดินทาง + ใบสั่งจ้าง"),
+            ("9", "9 - สำเนาใบเสร็จรับเงิน"),
+            ("A", "A - เงินในเช็คใบเสร็จไม่เท่ากัน - จ่าย"),
+            ("B", "B - หนังสือรับรองการหักภาษีณ.ที่จ่าย."),
+            ("C", "C - หนังสือกรมศุลกากร"),
+            ("D", "D - ใบกำกับภาษี"),
             (
                 "E",
-                "หนังสือมอบพร้อมติดอากรแสตมป์ 10 บาท + สำเนาบัตร ปชช.ผู้มอบพร้อมลงนาม "
+                "E - หนังสือมอบพร้อมติดอากรแสตมป์ 10 บาท + สำเนาบัตร ปชช.ผู้มอบพร้อมลงนาม "
                 "+ สำเนาบัตร ปชช.ผู้รับมอบพร้อมลงนาม",
             ),
             (
                 "F",
-                "หนังสือมอบจากคณะบุคคลพร้อมติดอากรแสตมป์ 10 บาท + "
+                "F - หนังสือมอบจากคณะบุคคลพร้อมติดอากรแสตมป์ 10 บาท + "
                 "สำเนาสัญญาจัดตั้งคณะบุคคลพร้อมลงนาม + "
                 "สำเนาบัตรผู้เสียภาษีของคณะบุคคลพร้อมลงนาม + "
                 "สำเนาบัตร ปชช.ผู้มอบ และผู้รับมอบ พร้อมลงนาม",
             ),
-            ("G", "เอกสารยืนยันการโอนเงิน/ออกเช็คผ่านโทรสาร"),
-            ("H", "อื่น ๆ"),
-            ("I", "สัญญาประนีประนอม"),
-            ("J", "ใบเสร็จ/ใบกำกับภาษี + ใบรับรถ"),
-            ("K", "หนังสือมอบ + บัตร ปชช.ผู้รับมอบ"),
-            ("L", "บัตร ปชช.ผู้มอบ + บัตร ปชช.ผู้รับมอบ"),
-            ("M", "ใบรับรถ + เซ็นชื่อใบรับเงิน/สัญญา"),
-            ("N", "ใบรถ + น.มอบ + ผู้รับมอบ + เซ็นชื่อ/สัญญา"),
-            ("O", "ใบรับเช็ค"),
-            ("P", "ใบลดหนี้"),
-            ("Q", "ใบเพิ่มหนี้"),
-            ("R", "ดูช่อง Invoice Description ใน Advice"),
-            ("S", "ขายลดเช็คทันที"),
-            ("T", "Email + สำเนาบัตรพนง. + สำเนาบัตรปปช."),
-            ("U", "ค่าสาธารณูปโภค"),
-            ("V", "ใบเสร็จรับเงินและ หนังสือรับรองหักภาษี ณ ที่จ่าย"),
-            ("W", "ใบเสร็จรับเงิน หรือบัตรประชาชน"),
-            ("X", "ไม่ใช้เอกสารใด ๆ"),
-            ("Y", "ใบวางบิลและใบเสร็จรับเงิน (จำนวนเงินไม่ตรง-จ่าย)"),
-            ("Z", "ใบวางบิลและสำเนาบัตรประชาชน"),
+            ("G", "G - เอกสารยืนยันการโอนเงิน/ออกเช็คผ่านโทรสาร"),
+            ("H", "H - อื่น ๆ"),
+            ("I", "I - สัญญาประนีประนอม"),
+            ("J", "J - ใบเสร็จ/ใบกำกับภาษี + ใบรับรถ"),
+            ("K", "K - หนังสือมอบ + บัตร ปชช.ผู้รับมอบ"),
+            ("L", "L - บัตร ปชช.ผู้มอบ + บัตร ปชช.ผู้รับมอบ"),
+            ("M", "M - ใบรับรถ + เซ็นชื่อใบรับเงิน/สัญญา"),
+            ("N", "N - ใบรถ + น.มอบ + ผู้รับมอบ + เซ็นชื่อ/สัญญา"),
+            ("O", "O - ใบรับเช็ค"),
+            ("P", "P - ใบลดหนี้"),
+            ("Q", "Q - ใบเพิ่มหนี้"),
+            ("R", "R - ดูช่อง Invoice Description ใน Advice"),
+            ("S", "S - ขายลดเช็คทันที"),
+            ("T", "T - Email + สำเนาบัตรพนง. + สำเนาบัตรปปช."),
+            ("U", "U - ค่าสาธารณูปโภค"),
+            ("V", "V - ใบเสร็จรับเงินและ หนังสือรับรองหักภาษี ณ ที่จ่าย"),
+            ("W", "W - ใบเสร็จรับเงิน หรือบัตรประชาชน"),
+            ("X", "X - ไม่ใช้เอกสารใด ๆ"),
+            ("Y", "Y - ใบวางบิลและใบเสร็จรับเงิน (จำนวนเงินไม่ตรง-จ่าย)"),
+            ("Z", "Z - ใบวางบิลและสำเนาบัตรประชาชน"),
         ],
         ondelete={
             "1": "cascade",
@@ -440,9 +484,13 @@ class BankPaymentExport(models.Model):
         return wht_income_type
 
     def _get_wht_header(self, wht_cert):
-        if not self.scb_is_wht_present:
-            return "".ljust(40)
         wht_type = "00"
+        if not (wht_cert and self.scb_is_wht_present):
+            return "{wht_type}{filter}{filter_number}".format(
+                wht_type=wht_type,
+                filter="".ljust(14),
+                filter_number="0".zfill(24),
+            )
         if wht_cert.income_tax_form == "pnd1":
             wht_type = "01"
         elif wht_cert.income_tax_form == "pnd3":
@@ -460,8 +508,8 @@ class BankPaymentExport(models.Model):
         return text
 
     def _get_wht_header2(self, wht_cert):
-        if not self.scb_is_wht_present:
-            return "".ljust(49)
+        if not (wht_cert and self.scb_is_wht_present):
+            return "0{}".format("".ljust(48))
         mapping_tax_payer = {
             "withholding": "3",
             "paid_one_time": "1",
@@ -475,7 +523,7 @@ class BankPaymentExport(models.Model):
 
     def _get_invoice_header(self, invoices):
         if not self.scb_is_invoice_present:
-            return "".ljust(22)
+            return "0".zfill(22)
         invoice_total_amount = self._get_amount_no_decimal(
             sum(invoices.mapped("amount_total"))
         )
@@ -484,6 +532,15 @@ class BankPaymentExport(models.Model):
             invoice_total_amount=invoice_total_amount,
         )
         return text
+
+    def _get_pickup_location(self):
+        pickup = ""
+        if self.scb_delivery_mode == "C":
+            if self.scb_product_code not in ("MCP", "DDP", "CCP"):
+                pickup = self.scb_pickup_location
+            else:
+                pickup = self.scb_pickup_location_cheque
+        return pickup.ljust(4)
 
     def _get_service_type(self):
         if self.scb_product_code == "BNT":
@@ -514,23 +571,24 @@ class BankPaymentExport(models.Model):
         account_bank_payment = self.export_line_ids[
             0
         ].payment_journal_id.bank_account_id.acc_number
-        if not account_bank_payment:
-            account_bank_payment = "-------------------------"
-        account_type = "0{}".format(account_bank_payment[3])
-        branch_code = "0{}".format(account_bank_payment[0:3])
+        sanitize_account_bank_payment = sanitize_account_number(account_bank_payment)
+        if not sanitize_account_bank_payment:
+            sanitize_account_bank_payment = "-------------------------"
+        account_type = "0{}".format(sanitize_account_bank_payment[3])
+        branch_code = "0{}".format(sanitize_account_bank_payment[0:3])
         text = (
             "002{product_code}{value_date}{debit_account_no}{account_type_debit_account}"
             "{debit_branch_code}THB{debit_amount}{internal_ref}{no_credit}{fee_debit_account}"
             "{filler}{mcl_type}{account_type_fee}{debit_branch_code_fee}\r\n".format(
                 product_code=self.scb_product_code,
                 value_date=self.effective_date.strftime("%Y%m%d"),
-                debit_account_no=account_bank_payment.ljust(25),
+                debit_account_no=sanitize_account_bank_payment.ljust(25),
                 account_type_debit_account=account_type,
                 debit_branch_code=branch_code,
                 debit_amount=total_batch_amount,
                 internal_ref=self._get_reference().ljust(8),
                 no_credit=str(self._get_line_count()).zfill(6),
-                fee_debit_account=account_bank_payment.ljust(15),
+                fee_debit_account=sanitize_account_bank_payment.ljust(15),
                 filler="".ljust(9),
                 mcl_type=self._get_mcl_type(),
                 account_type_fee=account_type.zfill(2),
@@ -549,6 +607,8 @@ class BankPaymentExport(models.Model):
             receiver_branch_code,
             receiver_acc_number,
         ) = pe_line._get_receiver_information()
+        # TODO: Not support thai
+        bank_name = pe_line.payment_partner_bank_id.bank_id.name[:35].ljust(35)
         text = (
             "003{idx}{credit_account}{credit_amount}THB{internal_ref}{wht_present}"
             "{invoice_detail_present}{credit_advice_required}{delivery_mode}"
@@ -560,31 +620,31 @@ class BankPaymentExport(models.Model):
                 credit_account=receiver_acc_number.ljust(25),
                 credit_amount=line_batch_amount,
                 internal_ref=self._get_reference().ljust(8),
-                wht_present=self.scb_is_wht_present,
-                invoice_detail_present=self.scb_is_invoice_present,
-                credit_advice_required=self.scb_is_credit_advice,
+                wht_present="Y" if self.scb_is_wht_present else "N",
+                invoice_detail_present="Y" if self.scb_is_invoice_present else "N",
+                credit_advice_required="Y" if self.scb_is_credit_advice else "N",
                 delivery_mode=self.scb_delivery_mode,
-                pickup_location=(self.scb_pickup_location or "").ljust(4),
+                pickup_location=self._get_pickup_location(),
                 wht_header=self._get_wht_header(wht_cert),  # WHT Form Type - Total WHT
                 invoice_number=self._get_invoice_header(invoices),
                 wht_header2=self._get_wht_header2(wht_cert),  # Pay Type - Deduct Date
                 receiver_bank_code=receiver_bank_code,
-                receiver_bank_name=pe_line.payment_partner_bank_id.bank_id.name,
+                receiver_bank_name=bank_name,
                 receiver_branch_code="".zfill(4),  # TODO
                 receiver_branch_name="".ljust(35),  # TODO
                 wht_signatory=self.scb_wht_signatory,
                 notification=self.scb_beneficiary_noti,
-                customer_ref="".ljust(20),  # TODO
+                customer_ref=pe_line.payment_id.name.ljust(20),
                 cheque_ref=self.scb_cheque_ref or "".ljust(1),
                 payment_type_code=self.scb_payment_type_code or "".ljust(3),
                 service_type=self._get_service_type() or "".ljust(2),
                 remark="".ljust(68),  # NOTE: use in cheque
-                charge="B" if self.scb_beneficiary_charge else "C",
+                charge="B" if self.scb_beneficiary_charge else " ",
             )
         )
         return text
 
-    def _get_text_payee_detail_scb(self, idx, pe_line, line_batch_amount, wht_cert):
+    def _get_text_payee_detail_scb(self, idx, pe_line, line_batch_amount):
         receiver_name = pe_line._get_receiver_information()[0]
         receiver_address1 = " ".join(
             [
@@ -611,9 +671,9 @@ class BankPaymentExport(models.Model):
                 payee_address3="".ljust(70),
                 payee_tax_id="".ljust(10),  # TODO
                 payee_name_eng=self._get_payee_name_eng(pe_line).ljust(70),
-                payee_fax=self._get_payee_fax().zfill(10),
-                payee_sms=self._get_payee_sms().zfill(10),
-                payee_email=self._get_payee_email().ljust(64),
+                payee_fax=self._get_payee_fax().zfill(10),  # TODO
+                payee_sms=self._get_payee_sms().zfill(10),  # TODO
+                payee_email=self._get_payee_email().ljust(64),  # TODO
                 # TODO
                 space="".ljust(310),
             )
@@ -683,6 +743,7 @@ class BankPaymentExport(models.Model):
         wht = hasattr(self.env["account.payment"], "wht_cert_ids")
         # Details
         for idx, pe_line in enumerate(payment_lines):
+            idx += 1
             # This amount related decimal from invoice, Odoo invoice do not rounding.
             payment_net_amount = pe_line._get_payment_net_amount()
             line_batch_amount = pe_line._get_amount_no_decimal(payment_net_amount)
@@ -697,11 +758,9 @@ class BankPaymentExport(models.Model):
             text += self._get_text_credit_detail_scb(
                 idx, pe_line, line_batch_amount, wht_cert, invoices
             )
-            text += self._get_text_payee_detail_scb(
-                idx, pe_line, line_batch_amount, wht_cert
-            )
+            text += self._get_text_payee_detail_scb(idx, pe_line, line_batch_amount)
             # Print WHT from bank
-            if self.scb_is_wht_present:
+            if self.scb_is_wht_present and wht_cert:
                 # Get withholding tax from payment state done only
                 for sequence_wht, wht_line in enumerate(wht_cert.wht_line):
                     text += self._get_text_wht_detail_scb(idx, sequence_wht, wht_line)
@@ -742,11 +801,23 @@ class BankPaymentExport(models.Model):
     def onchange_scb_product_code(self):
         if self.scb_product_code not in ("MCP", "DDP", "CCP"):
             self.scb_cheque_ref = False
+            self.scb_delivery_mode = False
         if self.scb_product_code != "BNT":
             self.scb_payment_type_code = False
             self.scb_service_type_bahtnet = False
         if self.scb_product_code not in ("MCL", "PA4", "PA5", "PA6"):
             self.scb_service_type = False
+
+    @api.onchange(
+        "scb_is_invoice_present", "scb_is_wht_present", "scb_is_credit_advice"
+    )
+    def onchange_scb_present(self):
+        if self.scb_product_code not in ("MCP", "DDP", "CCP") and not (
+            self.scb_is_invoice_present
+            or self.scb_is_wht_present
+            or self.scb_is_credit_advice
+        ):
+            self.scb_delivery_mode = False
 
     def _check_constraint_confirm(self):
         res = super()._check_constraint_confirm()

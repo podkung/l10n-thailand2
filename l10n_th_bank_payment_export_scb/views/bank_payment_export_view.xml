@@ -68,8 +68,15 @@
                     name="scb_pickup_location"
                     string="Pickup Location"
                     attrs="{
-                        'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_delivery_mode', '!=', 'C')],
-                        'required': [('scb_is_editable', '!=', False), ('scb_delivery_mode', '=', 'C')]}"
+                        'invisible': ['|', '|', ('scb_is_editable', '!=', True), ('scb_delivery_mode', '!=', 'C'), ('scb_product_code', 'in', ['MCP', 'CCP', 'DDP', 'XMQ', 'XDQ'])],
+                        'required': [('scb_is_editable', '!=', False), ('scb_delivery_mode', '=', 'C'), ('scb_product_code', 'not in', ['MCP', 'CCP', 'DDP', 'XMQ', 'XDQ'])]}"
+                />
+                <field
+                    name="scb_pickup_location_cheque"
+                    string="Pickup Location"
+                    attrs="{
+                        'invisible': ['|', '|',('scb_is_editable', '!=', True), ('scb_delivery_mode', '!=', 'C'), ('scb_product_code', 'not in', ['MCP', 'CCP', 'DDP', 'XMQ', 'XDQ'])],
+                        'required': [('scb_is_editable', '!=', False), ('scb_delivery_mode', '=', 'C'), ('scb_product_code', 'in', ['MCP', 'CCP', 'DDP', 'XMQ', 'XDQ'])]}"
                 />
                 <field
                     name="scb_service_type"
