@@ -35,6 +35,11 @@
                     attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', 'not in', ['MCP', 'DDP', 'CCP'])], 'required': [('scb_is_editable', '!=', False), ('scb_product_code', 'in', ['MCP', 'DDP', 'CCP'])]}"
                 />
                 <field
+                    name="scb_remark"
+                    string="Remark"
+                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', 'not in', ['MCP', 'DDP', 'CCP'])]}"
+                />
+                <field
                     name="scb_payment_type_code"
                     string="Payment Type"
                     attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', '!=', 'BNT')], 'required': [('scb_is_editable', '!=', False), ('scb_product_code', '=', 'BNT')]}"

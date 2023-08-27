@@ -358,6 +358,7 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+    scb_remark = fields.Char(size=50)
     scb_payment_type_code = fields.Selection(
         selection=[
             ("CSH", "CSH - Cash"),
@@ -423,14 +424,14 @@ class BankPaymentExport(models.Model):
             return "2"
         return " "
 
-    def _get_payee_name_eng(self, pe_line):
+    def _get_payee_name_eng(self, pe_line, receiver_name=""):
         if self.scb_product_code == "BNT":
             receiver_name = (
                 pe_line.payment_partner_bank_id.acc_holder_name_en
                 or "**Not found account holder en**"
             )
             return receiver_name
-        return ""
+        return receiver_name
 
     def _get_wht_income_type(self, wht_line):
         wht_income_type = wht_line.wht_cert_income_type.lower()
@@ -497,10 +498,60 @@ class BankPaymentExport(models.Model):
                 pickup = self.scb_pickup_location_cheque
         return pickup.ljust(4)
 
+    def _get_scb_bank_name(self, pe_line):
+        # NOTE: Not support thai language
+        return pe_line.payment_partner_bank_id.bank_id.name[:35].ljust(35)
+
     def _get_service_type(self):
         if self.scb_product_code == "BNT":
             return self.scb_service_type_bahtnet
         return self.scb_service_type
+
+    def _get_address(self, pe_line):
+        if self.scb_product_code == "BNT":
+            receiver_address = (
+                pe_line.payment_partner_id.street3 or "**street3 is not data**"
+            )
+        else:
+            receiver_address = " ".join(
+                [
+                    pe_line.payment_partner_id.street,
+                    pe_line.payment_partner_id.street2 or "",
+                    pe_line.payment_partner_id.city or "",
+                    pe_line.payment_partner_id.zip or "",
+                ]
+            )
+
+        def split_thai_string(input_string, max_length):
+            words = input_string.split()
+            result = []
+            current_line = ""
+
+            for word in words:
+                if len(current_line + word) > max_length:
+                    result.append(current_line.strip())
+                    current_line = ""
+
+                current_line += word + " "
+
+            if current_line.strip():
+                result.append(current_line.strip())
+
+            return result
+
+        def pad_lines(lines, desired_length):
+            padded_lines = [line.ljust(desired_length) for line in lines]
+            return padded_lines
+
+        def ensure_three_lines(lines, desired_length):
+            while len(lines) < 3:
+                lines.append("".ljust(desired_length))
+
+        result = split_thai_string(receiver_address, 70)
+        padded_result = pad_lines(result, 70)
+        ensure_three_lines(padded_result, 70)
+
+        return "".join(padded_result)
 
     def _get_text_header_scb(self):
         self.ensure_one()
@@ -562,15 +613,16 @@ class BankPaymentExport(models.Model):
             receiver_branch_code,
             receiver_acc_number,
         ) = pe_line._get_receiver_information()
-        # TODO: Not support thai
-        bank_name = pe_line.payment_partner_bank_id.bank_id.name[:35].ljust(35)
+        if self.scb_product_code in ["MCP", "DDP"]:
+            receiver_branch_code = "0111"
         text = (
             "003{idx}{credit_account}{credit_amount}THB{internal_ref}{wht_present}"
             "{invoice_detail_present}{credit_advice_required}{delivery_mode}"
             "{pickup_location}{wht_header}{invoice_number}{wht_header2}"
             "{receiver_bank_code}{receiver_bank_name}{receiver_branch_code}"
             "{receiver_branch_name}{wht_signatory}{notification}{customer_ref}"
-            "{cheque_ref}{payment_type_code}{service_type}{remark}{charge}\r\n".format(
+            "{cheque_ref}{payment_type_code}{service_type}{remark}"
+            "{scb_remark}{charge}\r\n".format(
                 idx=str(idx).zfill(6),
                 credit_account=receiver_acc_number.ljust(25),
                 credit_amount=line_batch_amount,
@@ -584,16 +636,17 @@ class BankPaymentExport(models.Model):
                 invoice_number=self._get_invoice_header(invoices),
                 wht_header2=self._get_wht_header2(wht_cert),  # Pay Type - Deduct Date
                 receiver_bank_code=receiver_bank_code,
-                receiver_bank_name=bank_name,
-                receiver_branch_code="".zfill(4),  # TODO
-                receiver_branch_name="".ljust(35),  # TODO
+                receiver_bank_name=self._get_scb_bank_name(pe_line),
+                receiver_branch_code=receiver_branch_code,
+                receiver_branch_name=(receiver_branch_code or "").ljust(35),
                 wht_signatory=self.scb_wht_signatory,
                 notification=pe_line.scb_beneficiary_noti,
                 customer_ref=pe_line.payment_id.name.ljust(20),
                 cheque_ref=self.scb_cheque_ref or "".ljust(1),
                 payment_type_code=self.scb_payment_type_code or "".ljust(3),
                 service_type=self._get_service_type() or "".ljust(2),
-                remark="".ljust(68),  # NOTE: use in cheque
+                remark=(self.scb_remark or "").ljust(50),
+                scb_remark="".ljust(18),
                 charge="B" if pe_line.scb_beneficiary_charge else " ",
             )
         )
@@ -601,29 +654,16 @@ class BankPaymentExport(models.Model):
 
     def _get_text_payee_detail_scb(self, idx, pe_line, line_batch_amount):
         receiver_name = pe_line._get_receiver_information()[0]
-        receiver_address1 = " ".join(
-            [
-                pe_line.payment_partner_id.street,
-            ]
-        )
-        receiver_address2 = " ".join(
-            [
-                pe_line.payment_partner_id.street2 or "",
-                pe_line.payment_partner_id.city or "",
-                pe_line.payment_partner_id.zip or "",
-            ]
-        )
+        address = self._get_address(pe_line)
         text = (
             "004{internal_ref}{idx}{payee_idcard}{payee_name}"
-            "{payee_address1}{payee_address2}{payee_address3}{payee_tax_id}"
-            "{payee_name_eng}{payee_fax}{payee_sms}{payee_email}{space}\r\n".format(
+            "{payee_address}{payee_tax_id}{payee_name_eng}{payee_fax}{payee_sms}"
+            "{payee_email}{space}\r\n".format(
                 internal_ref=self._get_reference().ljust(8),
                 idx=str(idx).zfill(6),
                 payee_idcard=str(pe_line.payment_partner_id.vat).zfill(15),
                 payee_name=receiver_name.ljust(100),
-                payee_address1=receiver_address1.ljust(70),
-                payee_address2=receiver_address2.ljust(70),
-                payee_address3="".ljust(70),
+                payee_address=address,
                 payee_tax_id="".ljust(10),  # TODO
                 payee_name_eng=self._get_payee_name_eng(pe_line).ljust(70),
                 payee_fax=pe_line._get_payee_fax().zfill(10),
@@ -718,10 +758,12 @@ class BankPaymentExport(models.Model):
             if self.scb_is_wht_present and wht_cert:
                 # Get withholding tax from payment state done only
                 for sequence_wht, wht_line in enumerate(wht_cert.wht_line):
+                    sequence_wht += 1
                     text += self._get_text_wht_detail_scb(idx, sequence_wht, wht_line)
             # Print Invoices from bank
             if self.scb_is_invoice_present:
                 for sequence_inv, inv in enumerate(invoices):
+                    sequence_inv += 1
                     text += self._get_text_invoice_detail_scb(idx, sequence_inv, inv)
         text += self._get_text_footer_scb(payment_lines, total_batch_amount)
         return text
@@ -733,7 +775,7 @@ class BankPaymentExport(models.Model):
         return super()._generate_bank_payment_text()
 
     def _get_view_report_text(self):
-        """TODO: This function can used demo. May be we delete it later"""
+        """NOTE: This function can used demo. May be we delete it later"""
         if self.bank == "SICOTHBK":
             return "l10n_th_bank_payment_export_scb.action_payment_scb_txt"
         return super()._get_view_report_text()
@@ -778,4 +820,13 @@ class BankPaymentExport(models.Model):
         res = super()._check_constraint_confirm()
         for rec in self.filtered(lambda l: l.bank == "SICOTHBK"):
             rec.onchange_scb_delivery_mode()
+            if rec.scb_product_code in ["MCP", "CCP", "DDP", "PAY", "DCP"] and any(
+                line.payment_bank_id.bank_code != "014" for line in rec.export_line_ids
+            ):
+                raise UserError(
+                    _(
+                        "'MCP', 'CCP', 'DDP' 'PAY' and 'DCP' codes must only be "
+                        "received with SCB bank."
+                    )
+                )
         return res
