@@ -3,6 +3,8 @@
 
 from odoo import api, fields, models
 
+from odoo.addons.base.models.res_bank import sanitize_account_number
+
 
 class BankPaymentExportLine(models.Model):
     _inherit = "bank.payment.export.line"
@@ -52,6 +54,14 @@ class BankPaymentExportLine(models.Model):
             receiver_acc_number,
         ) = super()._get_receiver_information()
         if self.payment_export_id.bank == "SICOTHBK":
+            # DCP get only 10 digits
+            if self.payment_export_id.scb_product_code == "DCP":
+                receiver_acc_number = receiver_acc_number[1:]
+            # BNT return following original
+            if self.payment_export_id.scb_product_code == "BNT":
+                receiver_acc_number = sanitize_account_number(
+                    self.payment_partner_bank_id.acc_number
+                )
             receiver_name = (
                 receiver_name and receiver_name[:100].ljust(100) or "".ljust(100)
             )

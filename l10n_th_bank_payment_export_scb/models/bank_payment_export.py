@@ -829,4 +829,10 @@ class BankPaymentExport(models.Model):
                         "received with SCB bank."
                     )
                 )
+            if rec.scb_product_code == "DCP" and any(
+                len(sanitize_account_number(line.payment_partner_bank_id.acc_number))
+                != 10
+                for line in rec.export_line_ids
+            ):
+                raise UserError(_("Account Number must only be 10 digits."))
         return res
