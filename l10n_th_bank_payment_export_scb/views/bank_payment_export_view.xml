@@ -99,16 +99,6 @@
                 expr="//page[@name='information']//group[@name='right_information']"
                 position="inside"
             >
-                <field
-                    name="scb_beneficiary_noti"
-                    string="Beneficiary Notification"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
-                />
-                <field
-                    name="scb_beneficiary_charge"
-                    string="Beneficiary Charge"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
-                />
                 <label
                     for="scb_is_invoice_present"
                     string="Invoice Details Present"
@@ -175,12 +165,24 @@
         <field name="arch" type="xml">
             <xpath expr="//tree/field[@name='state']" position="before">
                 <field
+                    name="scb_beneficiary_noti"
+                    string="Beneficiary Notification"
+                    attrs="{'required': [('parent.bank', '=', 'SICOTHBK')]}"
+                />
+                <field
                     name="scb_beneficiary_phone"
-                    attrs="{'column_invisible': [('parent.scb_beneficiary_noti', 'not in', ['F', 'S'])], 'required': [('parent.scb_beneficiary_noti', 'in', ['F', 'S'])]}"
+                    string="Phone/Fax"
+                    attrs="{'invisible': [('scb_beneficiary_noti', 'not in', ['F', 'S'])], 'required': [('scb_beneficiary_noti', 'in', ['F', 'S'])]}"
                 />
                 <field
                     name="scb_beneficiary_email"
-                    attrs="{'column_invisible': [('parent.scb_beneficiary_noti', '!=', 'E')], 'required': [('parent.scb_beneficiary_noti', '=', 'E')]}"
+                    string="Email"
+                    attrs="{'invisible': [('scb_beneficiary_noti', '!=', 'E')], 'required': [('scb_beneficiary_noti', '=', 'E')]}"
+                />
+                <field
+                    name="scb_beneficiary_charge"
+                    string="Beneficiary Charge"
+                    attrs="{'column_invisible': [('parent.bank', '!=', 'SICOTHBK')]}"
                 />
             </xpath>
         </field>

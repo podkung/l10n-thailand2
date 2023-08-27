@@ -162,23 +162,6 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
-    scb_beneficiary_noti = fields.Selection(
-        selection=[
-            ("N", "N - None"),
-            ("F", "F - Fax"),
-            ("S", "S - SMS"),
-            ("E", "E - Email"),
-        ],
-        ondelete={
-            "N": "cascade",
-            "F": "cascade",
-            "S": "cascade",
-            "E": "cascade",
-        },
-        default="N",
-        readonly=True,
-        states={"draft": [("readonly", False)]},
-    )
     scb_service_type = fields.Selection(
         selection=[
             ("01", "01 - เงินเดือน, ค่าจ้าง, บำเหน็จ, บำนาญ"),
@@ -254,10 +237,6 @@ class BankPaymentExport(models.Model):
             "22": "cascade",
             "23": "cascade",
         },
-    )
-    scb_beneficiary_charge = fields.Boolean(
-        readonly=True,
-        states={"draft": [("readonly", False)]},
     )
     scb_invoice_language = fields.Selection(
         selection=[("T", "T - Thai"), ("E", "E - English")],
@@ -609,13 +588,13 @@ class BankPaymentExport(models.Model):
                 receiver_branch_code="".zfill(4),  # TODO
                 receiver_branch_name="".ljust(35),  # TODO
                 wht_signatory=self.scb_wht_signatory,
-                notification=self.scb_beneficiary_noti,
+                notification=pe_line.scb_beneficiary_noti,
                 customer_ref=pe_line.payment_id.name.ljust(20),
                 cheque_ref=self.scb_cheque_ref or "".ljust(1),
                 payment_type_code=self.scb_payment_type_code or "".ljust(3),
                 service_type=self._get_service_type() or "".ljust(2),
                 remark="".ljust(68),  # NOTE: use in cheque
-                charge="B" if self.scb_beneficiary_charge else " ",
+                charge="B" if pe_line.scb_beneficiary_charge else " ",
             )
         )
         return text
@@ -783,19 +762,6 @@ class BankPaymentExport(models.Model):
             self.scb_service_type_bahtnet = False
         if self.scb_product_code not in ("MCL", "PA4", "PA5", "PA6"):
             self.scb_service_type = False
-
-    @api.onchange("scb_beneficiary_noti")
-    def onchange_beneficiary_noti(self):
-        for line in self.export_line_ids:
-            if self.scb_beneficiary_noti == "E":
-                line.scb_beneficiary_phone = line.scb_beneficiary_phone or False
-                line.scb_beneficiary_email = line.payment_partner_id.scb_email_partner
-            elif self.scb_beneficiary_noti == "F":
-                line.scb_beneficiary_phone = line.payment_partner_id.scb_phone_partner
-                line.scb_beneficiary_email = line.scb_beneficiary_email or False
-            elif self.scb_beneficiary_noti == "S":
-                line.scb_beneficiary_phone = line.payment_partner_id.scb_sms_partner
-                line.scb_beneficiary_email = line.scb_beneficiary_email or False
 
     @api.onchange(
         "scb_is_invoice_present", "scb_is_wht_present", "scb_is_credit_advice"
