@@ -179,14 +179,6 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
-    scb_beneficiary_phone = fields.Char(
-        readonly=True,
-        states={"draft": [("readonly", False)]},
-    )
-    scb_beneficiary_email = fields.Char(
-        readonly=True,
-        states={"draft": [("readonly", False)]},
-    )
     scb_service_type = fields.Selection(
         selection=[
             ("01", "01 - เงินเดือน, ค่าจ้าง, บำเหน็จ, บำนาญ"),
@@ -436,13 +428,6 @@ class BankPaymentExport(models.Model):
         for export in self:
             export.scb_is_editable = True if export.bank == "SICOTHBK" else False
 
-    @api.onchange("scb_beneficiary_noti")
-    def _onchange_scb_beneficiary_noti(self):
-        if self.scb_beneficiary_noti != "E":
-            self.scb_beneficiary_email = False
-        elif self.scb_beneficiary_noti not in ("F", "S"):
-            self.scb_beneficiary_phone = False
-
     def _get_amount_no_decimal(self, amount):
         if self.bank == "SICOTHBK":
             return str(int(amount * 1000)).zfill(16)
@@ -467,15 +452,6 @@ class BankPaymentExport(models.Model):
             )
             return receiver_name
         return ""
-
-    def _get_payee_fax(self):
-        return self.scb_beneficiary_phone if self.scb_beneficiary_noti == "F" else ""
-
-    def _get_payee_sms(self):
-        return self.scb_beneficiary_phone if self.scb_beneficiary_noti == "S" else ""
-
-    def _get_payee_email(self):
-        return self.scb_beneficiary_email if self.scb_beneficiary_noti == "E" else ""
 
     def _get_wht_income_type(self, wht_line):
         wht_income_type = wht_line.wht_cert_income_type.lower()
@@ -671,9 +647,9 @@ class BankPaymentExport(models.Model):
                 payee_address3="".ljust(70),
                 payee_tax_id="".ljust(10),  # TODO
                 payee_name_eng=self._get_payee_name_eng(pe_line).ljust(70),
-                payee_fax=self._get_payee_fax().zfill(10),  # TODO
-                payee_sms=self._get_payee_sms().zfill(10),  # TODO
-                payee_email=self._get_payee_email().ljust(64),  # TODO
+                payee_fax=pe_line._get_payee_fax().zfill(10),
+                payee_sms=pe_line._get_payee_sms().zfill(10),
+                payee_email=pe_line._get_payee_email().ljust(64),
                 # TODO
                 space="".ljust(310),
             )
@@ -807,6 +783,19 @@ class BankPaymentExport(models.Model):
             self.scb_service_type_bahtnet = False
         if self.scb_product_code not in ("MCL", "PA4", "PA5", "PA6"):
             self.scb_service_type = False
+
+    @api.onchange("scb_beneficiary_noti")
+    def onchange_beneficiary_noti(self):
+        for line in self.export_line_ids:
+            if self.scb_beneficiary_noti == "E":
+                line.scb_beneficiary_phone = line.scb_beneficiary_phone or False
+                line.scb_beneficiary_email = line.payment_partner_id.scb_email_partner
+            elif self.scb_beneficiary_noti == "F":
+                line.scb_beneficiary_phone = line.payment_partner_id.scb_phone_partner
+                line.scb_beneficiary_email = line.scb_beneficiary_email or False
+            elif self.scb_beneficiary_noti == "S":
+                line.scb_beneficiary_phone = line.payment_partner_id.scb_sms_partner
+                line.scb_beneficiary_email = line.scb_beneficiary_email or False
 
     @api.onchange(
         "scb_is_invoice_present", "scb_is_wht_present", "scb_is_credit_advice"

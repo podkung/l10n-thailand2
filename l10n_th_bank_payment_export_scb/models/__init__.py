@@ -3,3 +3,4 @@
 from . import bank_payment_template
 from . import bank_payment_export
 from . import bank_payment_export_line
+from . import res_partner

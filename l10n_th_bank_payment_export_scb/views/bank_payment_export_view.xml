@@ -99,30 +99,11 @@
                 expr="//page[@name='information']//group[@name='right_information']"
                 position="inside"
             >
-                <label
-                    for="scb_beneficiary_noti"
+                <field
+                    name="scb_beneficiary_noti"
                     string="Beneficiary Notification"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
+                    attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
                 />
-                <div>
-                    <field
-                        name="scb_beneficiary_noti"
-                        class="oe_inline"
-                        attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
-                    />
-                    <br />
-                    <field
-                        name="scb_beneficiary_phone"
-                        class="oe_inline"
-                        widget="phone"
-                        attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_beneficiary_noti', 'not in', ['F', 'S'])], 'required': [('scb_is_editable', '!=', False), ('scb_beneficiary_noti', 'in', ['F', 'S'])]}"
-                    />
-                    <field
-                        name="scb_beneficiary_email"
-                        widget="email"
-                        attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_beneficiary_noti', '!=', 'E')], 'required': [('scb_is_editable', '!=', False), ('scb_beneficiary_noti', '=', 'E')]}"
-                    />
-                </div>
                 <field
                     name="scb_beneficiary_charge"
                     string="Beneficiary Charge"
@@ -182,4 +163,27 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Bank Payment Export Line -->
+    <record id="bank_payment_export_line_view_tree" model="ir.ui.view">
+        <field name="name">bank.payment.export.line.view.tree</field>
+        <field name="model">bank.payment.export.line</field>
+        <field
+            name="inherit_id"
+            ref="l10n_th_bank_payment_export.bank_payment_export_line_view_tree"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//tree/field[@name='state']" position="before">
+                <field
+                    name="scb_beneficiary_phone"
+                    attrs="{'column_invisible': [('parent.scb_beneficiary_noti', 'not in', ['F', 'S'])], 'required': [('parent.scb_beneficiary_noti', 'in', ['F', 'S'])]}"
+                />
+                <field
+                    name="scb_beneficiary_email"
+                    attrs="{'column_invisible': [('parent.scb_beneficiary_noti', '!=', 'E')], 'required': [('parent.scb_beneficiary_noti', '=', 'E')]}"
+                />
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

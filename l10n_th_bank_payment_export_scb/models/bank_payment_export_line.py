@@ -1,11 +1,14 @@
 # Copyright 2023 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
-from odoo import models
+from odoo import fields, models
 
 
 class BankPaymentExportLine(models.Model):
     _inherit = "bank.payment.export.line"
+
+    scb_beneficiary_phone = fields.Char()
+    scb_beneficiary_email = fields.Char()
 
     def _get_receiver_information(self):
         (
@@ -53,3 +56,24 @@ class BankPaymentExportLine(models.Model):
         if self.payment_export_id.bank == "SICOTHBK":
             return str(int(amount * 1000)).zfill(16)
         return super()._get_amount_no_decimal(amount)
+
+    def _get_payee_fax(self):
+        return (
+            self.scb_beneficiary_phone
+            if self.payment_export_id.scb_beneficiary_noti == "F"
+            else ""
+        )
+
+    def _get_payee_sms(self):
+        return (
+            self.scb_beneficiary_phone
+            if self.payment_export_id.scb_beneficiary_noti == "S"
+            else ""
+        )
+
+    def _get_payee_email(self):
+        return (
+            self.scb_beneficiary_email
+            if self.payment_export_id.scb_beneficiary_noti == "E"
+            else ""
+        )
