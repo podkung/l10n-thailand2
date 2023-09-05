@@ -627,8 +627,10 @@ class BankPaymentExport(models.Model):
                 credit_account=receiver_acc_number.ljust(25),
                 credit_amount=line_batch_amount,
                 internal_ref=self._get_reference().ljust(8),
-                wht_present="Y" if self.scb_is_wht_present else "N",
-                invoice_detail_present="Y" if self.scb_is_invoice_present else "N",
+                wht_present="Y" if self.scb_is_wht_present and wht_cert else "N",
+                invoice_detail_present="Y"
+                if self.scb_is_invoice_present and invoices
+                else "N",
                 credit_advice_required="Y" if self.scb_is_credit_advice else "N",
                 delivery_mode=self.scb_delivery_mode,
                 pickup_location=self._get_pickup_location(),
@@ -647,7 +649,7 @@ class BankPaymentExport(models.Model):
                 service_type=self._get_service_type() or "".ljust(2),
                 remark=(self.scb_remark or "").ljust(50),
                 scb_remark="".ljust(18),
-                charge="B" if pe_line.scb_beneficiary_charge else " ",
+                charge="B " if pe_line.scb_beneficiary_charge else "  ",
             )
         )
         return text
@@ -668,7 +670,7 @@ class BankPaymentExport(models.Model):
                 payee_name_eng=self._get_payee_name_eng(pe_line).ljust(70),
                 payee_fax=pe_line._get_payee_fax().zfill(10),
                 payee_sms=pe_line._get_payee_sms().zfill(10),
-                payee_email=pe_line._get_payee_email().ljust(64),
+                payee_email=(pe_line._get_payee_email() or "").ljust(64),
                 # TODO
                 space="".ljust(310),
             )
