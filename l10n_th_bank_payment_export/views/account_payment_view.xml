@@ -39,7 +39,10 @@
                         <field name="payment_export_id" options="{'no_create': True}" />
                     </span>
                 </div>
-                <field name="bank_payment_template_id" />
+                <field
+                    name="bank_payment_template_id"
+                    attrs="{'readonly': [('state', '!=', 'draft')]}"
+                />
             </xpath>
         </field>
     </record>

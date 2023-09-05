@@ -30,7 +30,6 @@ class AccountPayment(models.Model):
     )
     bank_payment_template_id = fields.Many2one(
         comodel_name="bank.payment.template",
-        readonly=True,
         tracking=True,
         help="it help default value from bank payment template",
     )
