@@ -416,6 +416,9 @@ class BankPaymentExport(models.Model):
     def _get_reference(self):
         return self.name
 
+    def _get_reference_line(self):
+        return "00000001"
+
     def _get_line_count(self):
         return len(self.export_line_ids)
 
@@ -592,7 +595,7 @@ class BankPaymentExport(models.Model):
                 account_type_debit_account=account_type,
                 debit_branch_code=branch_code,
                 debit_amount=total_batch_amount,
-                internal_ref=self._get_reference().ljust(8),
+                internal_ref=self._get_reference_line().ljust(8),
                 no_credit=str(self._get_line_count()).zfill(6),
                 fee_debit_account=sanitize_account_bank_payment.ljust(15),
                 filler="".ljust(9),
@@ -626,7 +629,7 @@ class BankPaymentExport(models.Model):
                 idx=str(idx).zfill(6),
                 credit_account=receiver_acc_number.ljust(25),
                 credit_amount=line_batch_amount,
-                internal_ref=self._get_reference().ljust(8),
+                internal_ref=self._get_reference_line().ljust(8),
                 wht_present="Y" if self.scb_is_wht_present and wht_cert else "N",
                 invoice_detail_present="Y"
                 if self.scb_is_invoice_present and invoices
@@ -661,7 +664,7 @@ class BankPaymentExport(models.Model):
             "004{internal_ref}{idx}{payee_idcard}{payee_name}"
             "{payee_address}{payee_tax_id}{payee_name_eng}{payee_fax}{payee_sms}"
             "{payee_email}{space}\r\n".format(
-                internal_ref=self._get_reference().ljust(8),
+                internal_ref=self._get_reference_line().ljust(8),
                 idx=str(idx).zfill(6),
                 payee_idcard=str(pe_line.payment_partner_id.vat).zfill(15),
                 payee_name=receiver_name.ljust(100),
@@ -685,7 +688,7 @@ class BankPaymentExport(models.Model):
             "005{internal_ref}{idx}{wht_sequence}{wht_amount}"
             "{wht_income_type}{wht_income_description}{wht_deduct_rate}"
             "{wht_base_amount}\r\n".format(
-                internal_ref=self._get_reference().ljust(8),
+                internal_ref=self._get_reference_line().ljust(8),
                 idx=str(idx).zfill(6),
                 wht_sequence=str(sequence_wht).zfill(2),
                 wht_amount=wht_amount,
