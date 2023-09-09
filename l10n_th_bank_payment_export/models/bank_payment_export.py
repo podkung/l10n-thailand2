@@ -264,22 +264,11 @@ class BankPaymentExport(models.Model):
                 )
 
     def _check_constraint_create_bank_payment_export(self, payments):
-        method_manual_out = self.env.ref("account.account_payment_method_manual_out")
         comment_template = payments[0].bank_payment_template_id
         for payment in payments:
             if payment.bank_payment_template_id != comment_template:
                 raise UserError(
                     _("All payments must have the same bank payment template.")
-                )
-            if (
-                payment.payment_method_id.id != method_manual_out.id
-                or payment.journal_id.type != "bank"
-            ):
-                raise UserError(
-                    _(
-                        "You can export bank payments with journal 'Bank' "
-                        "and Payment method 'Manual' only"
-                    )
                 )
             if payment.export_status != "draft":
                 raise UserError(_("Payments have been already exported."))
