@@ -298,6 +298,20 @@ class BankPaymentExport(models.Model):
                 ctx.update({"default_ktb_bank_type": "standard"})
         return ctx
 
+    def _check_constraint_line(self):
+        # Add condition with line on this function
+        res = super()._check_constraint_line()
+        self.ensure_one()
+        if self.bank == "KRTHTHBK":
+            for line in self.export_line_ids:
+                if not line.payment_partner_bank_id:
+                    raise UserError(
+                        _("Recipient Bank with {} is not selected.").format(
+                            line.payment_id.name
+                        )
+                    )
+        return res
+
     def _check_constraint_create_bank_payment_export(self, payments):
         res = super()._check_constraint_create_bank_payment_export(payments)
         payment_bic_bank = list(set(payments.mapped("journal_id.bank_id.bic")))

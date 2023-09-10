@@ -173,14 +173,7 @@ class BankPaymentExport(models.Model):
 
     def _check_constraint_line(self):
         # Add condition with line on this function
-        self.ensure_one()
-        for line in self.export_line_ids:
-            if not line.payment_partner_bank_id:
-                raise UserError(
-                    _("Recipient Bank with {} is not selected.").format(
-                        line.payment_id.name
-                    )
-                )
+        return
 
     def _check_constraint_confirm(self):
         # Add condition on this function
