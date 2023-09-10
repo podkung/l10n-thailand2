@@ -518,7 +518,7 @@ class BankPaymentExport(models.Model):
         else:
             receiver_address = " ".join(
                 [
-                    pe_line.payment_partner_id.street,
+                    pe_line.payment_partner_id.street or "",
                     pe_line.payment_partner_id.street2 or "",
                     pe_line.payment_partner_id.city or "",
                     pe_line.payment_partner_id.zip or "",
@@ -834,4 +834,24 @@ class BankPaymentExport(models.Model):
                 for line in rec.export_line_ids
             ):
                 raise UserError(_("Account Number must only be 10 digits."))
+        return res
+
+    def _check_constraint_line(self):
+        # Add condition with line on this function
+        res = super()._check_constraint_line()
+        self.ensure_one()
+        if self.bank == "SICOTHBK" and self.scb_product_code not in [
+            "MCP",
+            "CCP",
+            "DDP",
+            "PAY",
+            "DCP",
+        ]:
+            for line in self.export_line_ids:
+                if not line.payment_partner_bank_id:
+                    raise UserError(
+                        _("Recipient Bank with {} is not selected.").format(
+                            line.payment_id.name
+                        )
+                    )
         return res
