@@ -501,9 +501,9 @@ class BankPaymentExport(models.Model):
                 pickup = self.scb_pickup_location_cheque
         return pickup.ljust(4)
 
-    def _get_scb_bank_name(self, pe_line):
+    def _get_scb_bank_name(self, receiver_bank_name):
         # NOTE: Not support thai language
-        return pe_line.payment_partner_bank_id.bank_id.name[:35].ljust(35)
+        return (receiver_bank_name and receiver_bank_name[:35] or "").ljust(35)
 
     def _get_service_type(self):
         if self.scb_product_code == "BNT":
@@ -616,7 +616,10 @@ class BankPaymentExport(models.Model):
             receiver_branch_code,
             receiver_acc_number,
         ) = pe_line._get_receiver_information()
-        if self.scb_product_code in ["MCP", "DDP"]:
+        receiver_bank_name = pe_line.payment_partner_bank_id.bank_id.name
+        if self.scb_product_code in ["MCP", "CCP", "DDP", "PAY", "DCP"]:
+            receiver_bank_code = "014"
+            receiver_bank_name = "SCB"
             receiver_branch_code = "0111"
         text = (
             "003{idx}{credit_account}{credit_amount}THB{internal_ref}{wht_present}"
@@ -641,7 +644,7 @@ class BankPaymentExport(models.Model):
                 invoice_number=self._get_invoice_header(invoices),
                 wht_header2=self._get_wht_header2(wht_cert),  # Pay Type - Deduct Date
                 receiver_bank_code=receiver_bank_code,
-                receiver_bank_name=self._get_scb_bank_name(pe_line),
+                receiver_bank_name=self._get_scb_bank_name(receiver_bank_name),
                 receiver_branch_code=receiver_branch_code,
                 receiver_branch_name=(receiver_branch_code or "").ljust(35),
                 wht_signatory=self.scb_wht_signatory,
@@ -825,15 +828,6 @@ class BankPaymentExport(models.Model):
         res = super()._check_constraint_confirm()
         for rec in self.filtered(lambda l: l.bank == "SICOTHBK"):
             rec.onchange_scb_delivery_mode()
-            if rec.scb_product_code in ["MCP", "CCP", "DDP", "PAY", "DCP"] and any(
-                line.payment_bank_id.bank_code != "014" for line in rec.export_line_ids
-            ):
-                raise UserError(
-                    _(
-                        "'MCP', 'CCP', 'DDP' 'PAY' and 'DCP' codes must only be "
-                        "received with SCB bank."
-                    )
-                )
             if rec.scb_product_code == "DCP" and any(
                 len(sanitize_account_number(line.payment_partner_bank_id.acc_number))
                 != 10
