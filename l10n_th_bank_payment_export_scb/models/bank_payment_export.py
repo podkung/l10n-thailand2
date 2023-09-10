@@ -802,16 +802,16 @@ class BankPaymentExport(models.Model):
                 )
             )
 
-    @api.onchange("scb_product_code")
-    def onchange_scb_product_code(self):
-        if self.scb_product_code not in ("MCP", "DDP", "CCP"):
-            self.scb_cheque_ref = False
-            self.scb_delivery_mode = False
-        if self.scb_product_code != "BNT":
-            self.scb_payment_type_code = False
-            self.scb_service_type_bahtnet = False
-        if self.scb_product_code not in ("MCL", "PA4", "PA5", "PA6"):
-            self.scb_service_type = False
+    # @api.onchange("scb_product_code")
+    # def onchange_scb_product_code(self):
+    #     if self.scb_product_code not in ("MCP", "DDP", "CCP"):
+    #         self.scb_cheque_ref = False
+    #         self.scb_delivery_mode = False
+    #     if self.scb_product_code != "BNT":
+    #         self.scb_payment_type_code = False
+    #         self.scb_service_type_bahtnet = False
+    #     if self.scb_product_code not in ("MCL", "PA4", "PA5", "PA6"):
+    #         self.scb_service_type = False
 
     @api.onchange(
         "scb_is_invoice_present", "scb_is_wht_present", "scb_is_credit_advice"
