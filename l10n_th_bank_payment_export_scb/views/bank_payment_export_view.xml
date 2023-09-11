@@ -32,12 +32,12 @@
                 <field
                     name="scb_cheque_ref"
                     string="Cheque Reference"
-                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', 'not in', ['MCP', 'DDP', 'CCP'])], 'required': [('scb_is_editable', '!=', False), ('scb_product_code', 'in', ['MCP', 'DDP', 'CCP'])]}"
+                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', 'not in', ['MCP', 'DDP', 'CCP', 'XMQ'])], 'required': [('scb_is_editable', '!=', False), ('scb_product_code', 'in', ['MCP', 'DDP', 'CCP', 'XMQ'])]}"
                 />
                 <field
                     name="scb_remark"
                     string="Remark"
-                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', 'not in', ['MCP', 'DDP', 'CCP'])]}"
+                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_product_code', 'not in', ['MCP', 'DDP', 'CCP', 'XMQ'])]}"
                 />
                 <field
                     name="scb_payment_type_code"
@@ -80,8 +80,8 @@
                     name="scb_pickup_location_cheque"
                     string="Pickup Location"
                     attrs="{
-                        'invisible': ['|', '|',('scb_is_editable', '!=', True), ('scb_delivery_mode', '!=', 'C'), ('scb_product_code', 'not in', ['MCP', 'CCP', 'DDP', 'XMQ', 'XDQ'])],
-                        'required': [('scb_is_editable', '!=', False), ('scb_delivery_mode', '=', 'C'), ('scb_product_code', 'in', ['MCP', 'CCP', 'DDP', 'XMQ', 'XDQ'])]}"
+                        'invisible': ['|', '|',('scb_is_editable', '!=', True), ('scb_delivery_mode', 'not in', ['P', 'C']), ('scb_product_code', 'not in', ['MCP', 'CCP', 'DDP', 'XMQ', 'XDQ'])],
+                        'required': [('scb_is_editable', '!=', False), ('scb_delivery_mode', 'in', ['P', 'C']), ('scb_product_code', 'in', ['MCP', 'CCP', 'DDP', 'XMQ', 'XDQ'])]}"
                 />
                 <field
                     name="scb_service_type"

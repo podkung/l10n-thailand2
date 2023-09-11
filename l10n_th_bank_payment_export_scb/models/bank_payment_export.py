@@ -494,11 +494,11 @@ class BankPaymentExport(models.Model):
 
     def _get_pickup_location(self):
         pickup = ""
-        if self.scb_delivery_mode == "C":
-            if self.scb_product_code not in ("MCP", "DDP", "CCP"):
-                pickup = self.scb_pickup_location
-            else:
+        if self.scb_delivery_mode in ["C", "P"]:
+            if self.scb_product_code in ("MCP", "DDP", "CCP", "XMQ"):
                 pickup = self.scb_pickup_location_cheque
+            else:
+                pickup = self.scb_pickup_location
         return pickup.ljust(4)
 
     def _get_scb_bank_name(self, receiver_bank_name):
@@ -621,6 +621,7 @@ class BankPaymentExport(models.Model):
             receiver_bank_code = "014"
             receiver_bank_name = "SCB"
             receiver_branch_code = "0111"
+            receiver_acc_number = ""
         text = (
             "003{idx}{credit_account}{credit_amount}THB{internal_ref}{wht_present}"
             "{invoice_detail_present}{credit_advice_required}{delivery_mode}"
@@ -662,6 +663,9 @@ class BankPaymentExport(models.Model):
 
     def _get_text_payee_detail_scb(self, idx, pe_line, line_batch_amount):
         receiver_name = pe_line._get_receiver_information()[0]
+        # Cheque is not select Recipient
+        if self.scb_product_code in ["MCP", "CCP", "DDP", "PAY", "DCP"]:
+            receiver_name = pe_line.payment_partner_id.name
         address = self._get_address(pe_line)
         text = (
             "004{internal_ref}{idx}{payee_idcard}{payee_name}"
