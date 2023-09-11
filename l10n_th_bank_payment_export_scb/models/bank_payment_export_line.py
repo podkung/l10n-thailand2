@@ -33,6 +33,7 @@ class BankPaymentExportLine(models.Model):
         for rec in self:
             rec.scb_beneficiary_noti = rec.payment_partner_id.scb_beneficiary_noti
             rec.scb_beneficiary_charge = rec.payment_partner_id.scb_beneficiary_charge
+            rec.onchange_beneficiary_noti()
 
     @api.onchange("scb_beneficiary_noti")
     def onchange_beneficiary_noti(self):
