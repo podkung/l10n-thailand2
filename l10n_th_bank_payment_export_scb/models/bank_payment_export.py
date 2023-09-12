@@ -272,6 +272,8 @@ class BankPaymentExport(models.Model):
     )
     scb_beneficiary_charge = fields.Boolean(
         string="Beneficiary Charge",
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     scb_cheque_ref = fields.Selection(
         selection=[
