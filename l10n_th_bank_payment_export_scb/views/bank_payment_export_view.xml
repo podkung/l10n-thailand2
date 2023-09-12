@@ -146,6 +146,10 @@
                     string="Credit Advice Required"
                     attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
                 />
+                <field
+                    name="scb_beneficiary_charge"
+                    attrs="{'invisible': [('scb_is_editable', '!=', True)]}"
+                />
             </xpath>
             <xpath
                 expr="//page[@name='information']/group[@name='system_config']"

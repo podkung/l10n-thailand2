@@ -23,7 +23,7 @@ class BankPaymentExportLine(models.Model):
     scb_beneficiary_phone = fields.Char()
     scb_beneficiary_email = fields.Char()
     scb_beneficiary_charge = fields.Boolean(
-        compute="_compute_default_scb_config",
+        compute="_compute_beneficiary_charge_line",
         store=True,
         readonly=False,
     )
@@ -32,8 +32,12 @@ class BankPaymentExportLine(models.Model):
     def _compute_default_scb_config(self):
         for rec in self:
             rec.scb_beneficiary_noti = rec.payment_partner_id.scb_beneficiary_noti
-            rec.scb_beneficiary_charge = rec.payment_partner_id.scb_beneficiary_charge
             rec.onchange_beneficiary_noti()
+
+    @api.depends("payment_export_id.scb_beneficiary_charge")
+    def _compute_beneficiary_charge_line(self):
+        for rec in self:
+            rec.scb_beneficiary_charge = rec.payment_export_id.scb_beneficiary_charge
 
     @api.onchange("scb_beneficiary_noti")
     def onchange_beneficiary_noti(self):

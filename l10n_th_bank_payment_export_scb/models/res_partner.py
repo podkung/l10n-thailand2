@@ -20,4 +20,3 @@ class ResPartner(models.Model):
     scb_email_partner = fields.Char(string="Default Email")
     scb_phone_partner = fields.Char(string="Default Fax")
     scb_sms_partner = fields.Char(string="Default SMS")
-    scb_beneficiary_charge = fields.Boolean(string="Beneficiary Charge")

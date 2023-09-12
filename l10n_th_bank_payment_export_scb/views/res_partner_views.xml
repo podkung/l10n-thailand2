@@ -14,9 +14,7 @@
                             <field name="scb_phone_partner" />
                             <field name="scb_sms_partner" />
                         </group>
-                        <group>
-                            <field name="scb_beneficiary_charge" />
-                        </group>
+                        <group />
                     </group>
                 </page>
             </xpath>
