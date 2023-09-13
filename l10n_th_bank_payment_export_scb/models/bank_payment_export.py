@@ -183,6 +183,8 @@ class BankPaymentExport(models.Model):
             "07": "cascade",
             "59": "cascade",
         },
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     scb_service_type_bahtnet = fields.Selection(
         selection=[
@@ -237,6 +239,8 @@ class BankPaymentExport(models.Model):
             "22": "cascade",
             "23": "cascade",
         },
+        readonly=True,
+        states={"draft": [("readonly", False)]},
     )
     scb_invoice_language = fields.Selection(
         selection=[("T", "T - Thai"), ("E", "E - English")],
