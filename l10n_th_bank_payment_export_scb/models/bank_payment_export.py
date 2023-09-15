@@ -503,10 +503,11 @@ class BankPaymentExport(models.Model):
 
     def _get_pickup_location(self):
         pickup = ""
-        if self.scb_delivery_mode in ["C", "P"]:
-            if self.scb_product_code in ("MCP", "DDP", "CCP", "XMQ"):
+        if self.scb_product_code in ["MCP", "CCP", "DDP", "XMQ", "XDQ"]:
+            if self.scb_delivery_mode in ["C", "P"]:
                 pickup = self.scb_pickup_location_cheque
-            else:
+        else:
+            if self.scb_delivery_mode == "C":
                 pickup = self.scb_pickup_location
         return pickup.ljust(4)
 
@@ -626,11 +627,12 @@ class BankPaymentExport(models.Model):
             receiver_acc_number,
         ) = pe_line._get_receiver_information()
         receiver_bank_name = pe_line.payment_partner_bank_id.bank_id.name
-        if self.scb_product_code in ["MCP", "CCP", "DDP", "PAY", "DCP"]:
+        if self.scb_product_code in ["MCP", "CCP", "DDP", "XMQ", "XDQ", "DCP"]:
             receiver_bank_code = "014"
             receiver_bank_name = "SCB"
             receiver_branch_code = "0111"
-            receiver_acc_number = ""
+            if self.scb_product_code != "DCP":
+                receiver_acc_number = ""
         text = (
             "003{idx}{credit_account}{credit_amount}THB{internal_ref}{wht_present}"
             "{invoice_detail_present}{credit_advice_required}{delivery_mode}"
@@ -673,7 +675,7 @@ class BankPaymentExport(models.Model):
     def _get_text_payee_detail_scb(self, idx, pe_line, line_batch_amount):
         receiver_name = pe_line._get_receiver_information()[0]
         # Cheque is not select Recipient
-        if self.scb_product_code in ["MCP", "CCP", "DDP", "PAY", "DCP"]:
+        if self.scb_product_code in ["MCP", "CCP", "DDP", "XMQ", "XDQ"]:
             receiver_name = pe_line.payment_partner_id.name
         address = self._get_address(pe_line)
         text = (
@@ -682,7 +684,7 @@ class BankPaymentExport(models.Model):
             "{payee_email}{space}\r\n".format(
                 internal_ref=self._get_reference_line().ljust(8),
                 idx=str(idx).zfill(6),
-                payee_idcard=str(pe_line.payment_partner_id.vat).zfill(15),
+                payee_idcard=str(pe_line.payment_partner_id.vat or "").ljust(15),
                 payee_name=receiver_name.ljust(100),
                 payee_address=address,
                 payee_tax_id="".ljust(10),  # TODO
@@ -724,7 +726,7 @@ class BankPaymentExport(models.Model):
             "006{internal_ref}{idx}{inv_sequence}{inv_number}{inv_amount}"
             "{inv_date}{inv_description}{po_number}{vat_amount}{payee_chage_amount}"
             "{wht_amount}{language}\r\n".format(
-                internal_ref=self._get_reference().ljust(8),
+                internal_ref=self._get_reference_line().ljust(8),
                 idx=str(idx).zfill(6),
                 inv_sequence=str(sequence_inv).zfill(6),
                 inv_number=inv.name.ljust(15) if inv.name != "/" else ".".ljust(15),
@@ -826,16 +828,16 @@ class BankPaymentExport(models.Model):
     #     if self.scb_product_code not in ("MCL", "PA4", "PA5", "PA6"):
     #         self.scb_service_type = False
 
-    @api.onchange(
-        "scb_is_invoice_present", "scb_is_wht_present", "scb_is_credit_advice"
-    )
-    def onchange_scb_present(self):
-        if self.scb_product_code not in ("MCP", "DDP", "CCP") and not (
-            self.scb_is_invoice_present
-            or self.scb_is_wht_present
-            or self.scb_is_credit_advice
-        ):
-            self.scb_delivery_mode = False
+    # @api.onchange(
+    #     "scb_is_invoice_present", "scb_is_wht_present", "scb_is_credit_advice"
+    # )
+    # def onchange_scb_present(self):
+    #     if self.scb_product_code not in ("MCP", "DDP", "CCP") and not (
+    #         self.scb_is_invoice_present
+    #         or self.scb_is_wht_present
+    #         or self.scb_is_credit_advice
+    #     ):
+    #         self.scb_delivery_mode = False
 
     def _check_constraint_confirm(self):
         res = super()._check_constraint_confirm()
@@ -857,8 +859,8 @@ class BankPaymentExport(models.Model):
             "MCP",
             "CCP",
             "DDP",
-            "PAY",
-            "DCP",
+            "XMQ",
+            "XDQ",
         ]:
             for line in self.export_line_ids:
                 if not line.payment_partner_bank_id:
