@@ -24,13 +24,17 @@ class AccountMoveLine(models.Model):
         readonly=False,
     )
 
-    @api.depends("product_id")
+    @api.depends("product_id", "partner_id")
     def _compute_wht_tax_id(self):
         for rec in self:
             # From invoice, default from product
             if rec.move_id.move_type in ("out_invoice", "out_refund", "in_receipt"):
                 rec.wht_tax_id = rec.product_id.wht_tax_id
             elif rec.move_id.move_type in ("in_invoice", "in_refund", "out_receipt"):
+                partner_id = rec.partner_id or rec.move_id.partner_id
+                if partner_id and partner_id.company_type == "company":
+                    rec.wht_tax_id = rec.product_id.supplier_company_wht_tax_id
+                    continue
                 rec.wht_tax_id = rec.product_id.supplier_wht_tax_id
             else:
                 rec.wht_tax_id = False
@@ -363,9 +367,9 @@ class AccountMove(models.Model):
                 ):
                     if tax_invoice.payment_id:  # Defer posting for payment
                         tax_invoice.payment_id.write({"to_clear_tax": True})
-                        return self.browse()  # return False
+                        continue
                     elif self.env.context.get("net_invoice_refund"):
-                        return self.browse()  # return False
+                        continue
                     else:
                         raise UserError(_("Please fill in tax invoice and tax date"))
 
@@ -457,8 +461,9 @@ class AccountMove(models.Model):
         return {
             "partner_id": wht_move.partner_id.id,
             "amount_income": amount_income,
-            "wht_tax_id": wht_move.wht_tax_id.id,
             "amount_wht": amount_wht,
+            "wht_tax_id": wht_move.wht_tax_id.id,
+            "wht_cert_income_type": wht_move.wht_tax_id.wht_cert_income_type,
         }
 
     def _get_tax_invoice_number(self, move, tax_invoice, tax):
@@ -515,6 +520,7 @@ class AccountMove(models.Model):
                     {
                         "amount_income": -line.amount_income,
                         "amount_wht": -line.amount_wht,
+                        "calendar_year": line.calendar_year,
                     }
                 )
                 line.cancelled = True
@@ -543,6 +549,7 @@ class AccountMove(models.Model):
     def _preapare_wht_certs(self):
         """Create withholding tax certs, 1 cert per partner"""
         self.ensure_one()
+        AccountWithholdingTax = self.env["account.withholding.tax"]
         wht_move_groups = self.env["account.withholding.move"].read_group(
             domain=[("move_id", "=", self.id)],
             fields=[
@@ -566,6 +573,7 @@ class AccountMove(models.Model):
         cert_list = []
         for partner in partners:
             cert_line_vals = []
+            wht_tax_set = set()
             wht_moves = list(
                 filter(lambda l: l["partner_id"][0] == partner.id, wht_move_groups)
             )
@@ -583,6 +591,7 @@ class AccountMove(models.Model):
                         },
                     )
                 )
+                wht_tax_set.add(wht_move["wht_tax_id"][0])
             cert_vals = {
                 "move_id": self.id,
                 "payment_id": self.payment_id.id,
@@ -590,6 +599,11 @@ class AccountMove(models.Model):
                 "date": self.date,
                 "wht_line": cert_line_vals,
             }
+            # Default income_tax_form
+            wht_tax = AccountWithholdingTax.browse(wht_tax_set)
+            income_tax_form = wht_tax.mapped("income_tax_form")
+            if len(income_tax_form) == 1:
+                cert_vals.update({"income_tax_form": income_tax_form[0]})
             cert_list.append(cert_vals)
         return cert_list
 
