@@ -13,6 +13,10 @@ class AccountMoveLine(models.Model):
         deduct, amount_deduct = super()._add_deduction(
             wht_lines, wht_tax, partner_id, amount_deduct, currency, date
         )
-        deduct["analytic_account_id"] = wht_lines.analytic_account_id.id
+        deduct["analytic_account_id"] = (
+            len(wht_lines.analytic_account_id) == 1
+            and wht_lines.analytic_account_id.id
+            or False
+        )
         deduct["analytic_tag_ids"] = wht_lines.analytic_tag_ids.ids
         return deduct, amount_deduct
