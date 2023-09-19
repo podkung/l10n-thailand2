@@ -36,6 +36,357 @@ class BankPaymentExport(models.Model):
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
+    scb_outward_remittance = fields.Boolean(
+        string="Outward Remittance",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_rate_type = fields.Selection(
+        selection=[
+            ("FW", "FW - Rate Forward"),
+            ("SP", "SP - Rate Spot"),
+        ],
+        string="Rate Type",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_contract_ref_no = fields.Char(
+        string="Forward Contract No. / Deal no.",
+        size=20,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_rate = fields.Float(
+        string="Rate",
+        digits=(3, 7),
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_charge_flag = fields.Selection(
+        selection=[
+            ("A", "A - Applicant Charge 'OUR'"),
+            ("B", "B - Beneficiary Charge 'BEN'"),
+        ],
+        string="Charge Flag",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_objective_code = fields.Selection(
+        selection=[
+            ("318004", "318004 - ค่าขนส่งสินค้า"),
+            ("318005", "318005 - ค่าเบี้ยประกันภัยและเบี้ยประกันภัยช่วงสำหรับสินค้า"),
+            ("318006", "318006 - ค่าสินไหมทดแทนประกันภัยสินค้า"),
+            (
+                "318007",
+                "318007 - ค่าบริการอื่นๆ ที่เกี่ยวกับการขนส่งสินค้าระหว่างประเทศ",
+            ),
+            ("318009", "318009 - ค่าโดยสาร"),
+            (
+                "318010",
+                "318010 - ค่าบริการต่าง ๆ ที่ให้แก่พาหนะระหว่างประเทศ และค่าขนส่งอื่นๆ",
+            ),
+            ("318012", "318012 - ค่าใช้จ่ายเดินทาง-นักท่องเที่ยว"),
+            ("318013", "318013 - ค่าใช้จ่ายเดินทาง-นักเรียน นักศึกษา"),
+            ("318014", "318014 - ค่าใช้จ่ายเดินทางไปต่างประเทศ-อื่นๆ"),
+            ("318015", "318015 - ค่าใช้จ่ายบริการด้านสุขภาพ"),
+            ("318018", "318018 - ค่าบริการภาครัฐบาล"),
+            ("318023", "318023 - ค่าสื่อสารโทรคมนาคม"),
+            ("318024", "318024 - ค่ารับเหมาก่อสร้าง"),
+            (
+                "318025",
+                "318025 - ค่ารอยัลตี้ ค่าเครื่องหมายการค้า/สิทธิบัตร และลิขสิทธิ์",
+            ),
+            (
+                "318026",
+                "318026 - ค่าเบี้ยประกันภัยและเบี้ยประกันภัยช่วงที่ไม่เกี่ยวกับสินค้า",
+            ),
+            ("318027", "318027 - ค่าสินไหมทดแทนประกันภัยที่ไม่เกี่ยวกับสินค้า"),
+            ("318028", "318028 - ค่าที่ปรึกษา"),
+            ("318029", "318029 - ค่าธรรมเนียมและค่านายหน้าทางด้านการเงิน"),
+            ("318030", "318030 - ค่าธรรมเนียมและค่านายหน้าอื่นๆ"),
+            ("318031", "318031 - ค่าบริการข้อมูลข่าวสาร"),
+            ("318032", "318032 - ค่าใช้จ่ายสำนักงานผู้แทน"),
+            ("318033", "318033 - ค่าโฆษณา"),
+            ("318034", "318034 - ค่าเช่าทรัพย์สิน"),
+            ("318035", "318035 - ค่าใช้จ่ายเกี่ยวกับภาพยนตร์ โทรทัศน์ และการแสดงต่างๆ"),
+            ("318036", "318036 - ค่าบริการอื่นๆ (โปรดระบุรายละเอียด)"),
+            ("318037", "318037 - ค่ารับจ้างผลิตหรือแปรรูป"),
+            ("318040", "318040 - รายได้ส่งกลับของแรงงาน"),
+            ("318042", "318042 - กำไร"),
+            ("318043", "318043 - ปันผล"),
+            ("318044", "318044 - ดอกเบี้ยเงินกู้"),
+            ("318045", "318045 - ดอกเบี้ยอื่นๆ"),
+            (
+                "318046",
+                "318046 - เงินผลประโยชน์จากการลงทุนและการให้กู้ยืมจากต่างประเทศภาครัฐบาล",
+            ),
+            ("318052", "318052 - เงินให้เปล่าภาคเอกชน"),
+            ("318053", "318053 - เงินให้เปล่าภาครัฐบาล"),
+            (
+                "318057",
+                "318057 - ส่งเงินซึ่งเป็นกรรมสิทธิ์ของคนไทยที่ย้ายถิ่นฐาน"
+                "ไปพำนักอยู่ต่างประเทศเป็นการถาวร",
+            ),
+            (
+                "318058",
+                "318058 - ส่งเงินมรดกให้แก่ผู้รับมรดก ซึ่งมีถิ่นพำนักถาวรในต่างประเทศ",
+            ),
+            (
+                "318059",
+                "318059 - ส่งเงินไปให้ครอบครัวหรือญาติพี่น้อง ซึ่งมีถิ่นพำนักถาวรในต่างประเทศ",
+            ),
+            (
+                "318062",
+                "318062 - รับ / ส่งคืน เงินลงทุนธุรกิจในเครือของบุคคลต่างประเทศ "
+                "(Foreign Direct Investment)",
+            ),
+            (
+                "318065",
+                "318065 - ส่ง / รับคืน เงินลงทุนธุรกิจในเครือของบุคคลไทย "
+                "(Thai Direct Investment)",
+            ),
+            ("318068", "318068 - เงินลงทุนอสังหาริมทรัพย์จากต่างประเทศ (อาคารชุด)"),
+            ("318072", "318072 - เงินลงทุนอสังหาริมทรัพย์ในต่างประเทศ"),
+            (
+                "318076",
+                "318076 - เงินลงทุนในหลักทรัพย์จากต่างประเทศ (Foreign Portfolio Investment)",
+            ),
+            ("318083", "318083 - เงินกู้ยืม (Foreign Loan)"),
+            (
+                "318086",
+                "318086 - เงินกู้ยืมที่เป็นตราสารหนี้ (Foreign Debt Instrument)",
+            ),
+            ("318090", "318090 - เงินให้กู้ยืม (Thai Loan)"),
+            ("318093", "318093 - เงินให้กู้ที่เป็นตราสารหนี้ (Thai Debt Instrument)"),
+            ("318097", "318097 - NR ปรับฐานะเงินตราต่างประเทศ"),
+            ("318104", "318104 - ธนาคารพาณิชย์ไทยปรับฐานะเงินตราต่างประเทศ"),
+            ("318113", "318113 - เงินทดรองจ่ายต่างๆ จากต่างประเทศ"),
+            ("318116", "318116 - เงินจ่ายล่วงหน้าค่าบริการต่างๆ จากต่างประเทศ"),
+            ("318122", "318122 - เงินโอนชำระหนี้แล้วไม่ได้ชำระ โอนกลับ"),
+            ("318123", "318123 - ส่งเงินสำรองเพื่อการชำระคืนเงินกู้ต่างประเทศ"),
+            ("318125", "318125 - เงินทดรองจ่ายต่างๆ ในต่างประเทศ"),
+            ("318128", "318128 - เงินจ่ายล่วงหน้าค่าบริการต่างๆ ในต่างประเทศ"),
+            ("318131", "318131 - เงินทุนอื่น ๆ (โปรดระบุรายละเอียด)"),
+            ("318143", "318143 - ถอนจากบัญชี FCD เพื่อขายรับบาท"),
+            ("318144", "318144 - ย้ายเงินในบัญชี FCD ของตนเอง"),
+            ("318167", "318167 - ตัวแทนโอนเงินระหว่างประเทศ"),
+            ("318212", "318212 - เงินส่วนต่างตามธุรกรรมอนุพันธ์"),
+            ("318213", "318213 - เงินลงทุนในหลักทรัพย์ต่างประเทศในต่างประเทศ"),
+            ("318215", "318215 - บริษัทหลักทรัพย์รับอนุญาต"),
+            ("318216", "318216 - เงินลงทุนในหลักทรัพย์ไทยในต่างประเทศ"),
+            ("318219", "318219 - ซื้อเงินตราต่างประเทศฝากเข้า FCD - เพื่อค่าสินค้า"),
+            ("318220", "318220 - ซื้อเงินตราต่างประเทศฝากเข้า FCD - เพื่อค่าบริการ"),
+            ("318221", "318221 - ซื้อเงินตราต่างประเทศฝากเข้า FCD - เพื่อการลงทุน"),
+            ("318222", "318222 - ซื้อเงินตราต่างประเทศฝากเข้า FCD - เพื่อการกู้ยืม"),
+            (
+                "318223",
+                "318223 - ซื้อเงินตราต่างประเทศฝากเข้า FCD - เพื่อวัตถุประสงค์อื่น",
+            ),
+            (
+                "318224",
+                "318224 - ฝากเงินตราต่างประเทศกับสถาบันการเงินในต่างประเทศเพื่อการลงทุน"
+                "ในหลักทรัพย์หรือเงินฝากเพื่อหาผลตอบแทน",
+            ),
+            (
+                "318225",
+                "318225 - ฝากเงินตราต่างประเทศ กับสถาบันการเงินในต่างประเทศ "
+                "เพื่อวัตถุประสงค์อื่น",
+            ),
+            ("318231", "318231 - ค่าสินค้าเข้าและสินค้าออก"),
+            (
+                "318232",
+                "318232 - ส่วนลด เงินมัดจำ เงินที่ชำระไว้เกิน และอื่นๆของค่าสินค้า",
+            ),
+            ("318233", "318233 - ค่าทองคำ"),
+            ("318236", "318236 - ธุรกรรม market maker เพื่ออนุพันธ์ อ้างอิงราคาทองคำ"),
+            ("318237", "318237 - ธุรกรรม market maker เพื่ออนุพันธ์อ้างอิงตัวแปรอื่น"),
+            (
+                "318239",
+                "318239 - ย้ายเงินในบัญชี FCD ของศูนย์บริหารเงินกับกลุ่มบริษัทเพื่อการกู้ยืม",
+            ),
+            (
+                "318240",
+                "318240 - ย้ายเงินในบัญชี FCD ของศูนย์บริหารเงินกับกลุ่มบริษัท"
+                "เพื่อค่าสินค้าและบริการ",
+            ),
+            (
+                "318241",
+                "318241 - ย้ายเงินในบัญชี FCD ของศูนย์บริหารเงินกับกลุ่มบริษัท"
+                "เพื่อการซื้อขาย FX",
+            ),
+            (
+                "318242",
+                "318242 - ย้ายเงินในบัญชี FCD ของธุรกิจในเครือเพื่อวัตถุประสงค์อื่น",
+            ),
+            (
+                "318243",
+                "318243 - ย้ายเงินในบัญชี FCD ระหว่างบุคคลอื่นเพื่อค่าสินค้าและบริการ",
+            ),
+            (
+                "318244",
+                "318244 - ย้ายเงินในบัญชี FCD ระหว่างบุคคลอื่นเพื่อการลงทุนในหลักทรัพย์",
+            ),
+            (
+                "318245",
+                "318245 - ย้ายเงินในบัญชี FCD ระหว่างบุคคลอื่นเพื่อวัตถุประสงค์อื่น",
+            ),
+            ("318246", "318246 - อื่น ๆ (โปรดระบุรายละเอียด)"),
+            ("318247", "318247 - ค่าบริการซ่อมบำรุงเครื่องจักรและอุปกรณ์"),
+        ],
+        string="Objective Code",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_objective_description = fields.Text(
+        string="Objective Description",
+        size=100,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_document_support = fields.Selection(
+        selection=[
+            ("01", "01 - Proforma Invoice"),
+            ("02", "02 - Invoice"),
+            ("03", "03 - Contract / Agreement"),
+            ("04", "04 - Others"),
+        ],
+        string="Document Support",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_document_other = fields.Text(
+        string="Document Other",
+        size=35,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_commodity_code = fields.Selection(
+        selection=[
+            ("I21041", "I21041 - Wood,Lumber,Cork,Pulp,Waste Paper"),
+            ("I12071", "I12071 - Small Arms"),
+            ("I21061", "I21061 - Textile Yarn & Thread"),
+            ("I21071", "I21071 - Fabrics"),
+            ("I21081", "I21081 - Jewelry,Including Silver Bars"),
+            ("I21051", "I21051 - Natural"),
+            ("I21052", "I21052 - Synthetic"),
+            ("I21091", "I21091 - Paper & PaperBoard"),
+            ("I21101", "I21101 - Chemicals"),
+            ("I22011", "I22011 - Crude Minerals"),
+            ("I30031", "I30031 - Construction Materials"),
+            ("I22021", "I22021 - Iron & Steel"),
+            ("I22022", "I22022 - Others (Base Metals)"),
+            ("I30011", "I30011 - Fertilizers & Pesticides"),
+            ("I30021", "I30021 - Cement"),
+            ("I30041", "I30041 - Tubes & Pipes"),
+            ("I30051", "I30051 - Glass & Other Mineral Manufactures"),
+            ("I30061", "I30061 - Rubber Manufactures"),
+            ("I30071", "I30071 - Metal Manufactures"),
+            ("I30081", "I30081 - Non-Elect.Mach.for Agricultural Use"),
+            ("I30131", "I30131 - Computer"),
+            ("I11014", "I11014 - Coffee, Tea & Spices"),
+            ("I11015", "I11015 - Others (Food & Beverages)"),
+            ("I30141", "I30141 - Computer Components"),
+            ("I30082", "I30082 - Tractors"),
+            ("I30083", "I30083 - Non-Elect.Mach.for Industrial Use"),
+            ("I11011", "I11011 - Dairy Products"),
+            ("I11012", "I11012 - Cereals & Preparations"),
+            ("I11013", "I11013 - Fruits & Vegetables"),
+            ("I11021", "I11021 - Tobacco Products"),
+            ("I11031", "I11031 - Toilet & Cleaning Articles"),
+            ("I11041", "I11041 - Clothing & Footwear"),
+            ("I11051", "I11051 - Medicinal & Pharmaceutical Products"),
+            ("I12011", "I12011 - Household Goods"),
+            ("I12021", "I12021 - Electrical Appliances"),
+            ("I12031", "I12031 - Wood & Cork Products"),
+            ("I12041", "I12041 - Leather & Leather Products"),
+            ("I12051", "I12051 - Furniture"),
+            ("I12061", "I12061 - Cycles,Motorcycles,Carts,etc."),
+            ("I21011", "I21011 - Fish and Preparations"),
+            ("I21031", "I21031 - Tobacco Leaves"),
+            ("I21021", "I21021 - Animal and vegetable crude materials"),
+            ("I30091", "I30091 - Electrical Machinery and Parts"),
+            ("I30101", "I30101 - Scientific & Optical Instruments"),
+            ("I30111", "I30111 - Aircraft & Ships"),
+            ("I30121", "I30121 - Locomotive & Rolling Stock"),
+            ("I30151", "I30151 - Integrated circuits"),
+            ("I30161", "I30161 - Integrated circuits components"),
+            ("I40011", "I40011 - Passenger Cars"),
+            ("I40012", "I40012 - Buses & Trucks"),
+            ("I40013", "I40013 - Chassis & Bodies"),
+            ("I40014", "I40014 - Tires"),
+            ("I40015", "I40015 - Others (Vehicles and Parts)"),
+            ("I40021", "I40021 - Coke,Briquettes,etc."),
+            ("I40022", "I40022 - Crude Oil"),
+            ("I40023", "I40023 - Gasoline"),
+            ("I40024", "I40024 - Kerosene"),
+            ("I40025", "I40025 - Diesel Oil & Special Fuels"),
+            ("I40026", "I40026 - Lubricants,Asphalt,etc."),
+            ("I40031", "I40031 - Munitions Used in Official Services"),
+            ("I40032", "I40032 - Other (Miscellaneous)"),
+            ("I40041", "I40041 - Gold Bullion"),
+            ("I40051", "I40051 - Thai military imports"),
+            ("I40061", "I40061 - Electricity imports"),
+        ],
+        string="Commodity Code",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_customer_ref1 = fields.Char(
+        string="Customer Ref1",
+        size=32,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_customer_ref2 = fields.Char(
+        string="Customer Ref2",
+        size=32,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_pre_advice = fields.Boolean(
+        string="Pre-Advice",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_execution_date = fields.Date(
+        string="Execution Date",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_intermediary_bank_id = fields.Many2one(
+        comodel_name="res.bank",
+        string="Intermediary Bank",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_intermediary_bank_account_number = fields.Char(
+        string="Intermediary Bank Account Number",
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
+    scb_additional_instruction = fields.Text(
+        string="Additional Instruction",
+        size=350,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     scb_product_code = fields.Selection(
         selection=[
             ("BNT", "BNT - Bahtnet"),
@@ -417,10 +768,24 @@ class BankPaymentExport(models.Model):
         for export in self:
             export.scb_is_editable = True if export.bank == "SICOTHBK" else False
 
-    def _get_amount_no_decimal(self, amount):
+    @api.constrains("scb_execution_date")
+    def check_scb_execution_date(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            if rec.scb_execution_date and not (
+                today <= rec.scb_execution_date <= rec.effective_date
+            ):
+                raise UserError(
+                    _("Execution Date must be within {} to {}").format(
+                        today.strftime("%d/%m/%Y"),
+                        rec.effective_date.strftime("%d/%m/%Y"),
+                    )
+                )
+
+    def _get_amount_no_decimal(self, amount, digits=False):
         if self.bank == "SICOTHBK":
-            return str(int(amount * 1000)).zfill(16)
-        return super()._get_amount_no_decimal(amount)
+            return str(int(amount * 1000)).zfill(digits)
+        return super()._get_amount_no_decimal(amount, digits)
 
     def _get_reference(self):
         return self.name
@@ -465,7 +830,9 @@ class BankPaymentExport(models.Model):
             wht_type = "03"
         elif wht_cert.income_tax_form == "pnd53":
             wht_type = "53"
-        total_wht = self._get_amount_no_decimal(sum(wht_cert.wht_line.mapped("amount")))
+        total_wht = self._get_amount_no_decimal(
+            sum(wht_cert.wht_line.mapped("amount")), 16
+        )
         text = "{wht_type}{wht_running_no}{wht_attach_no}{wht_line}{total_wht}".format(
             wht_type=wht_type,
             wht_running_no="".ljust(14),  # NOTE: Bank will generate
@@ -493,7 +860,7 @@ class BankPaymentExport(models.Model):
         if not self.scb_is_invoice_present:
             return "0".zfill(22)
         invoice_total_amount = self._get_amount_no_decimal(
-            sum(invoices.mapped("amount_total"))
+            sum(invoices.mapped("amount_total")), 16
         )
         text = "{invoice_count}{invoice_total_amount}".format(
             invoice_count=str(len(invoices)).zfill(6),
@@ -520,18 +887,16 @@ class BankPaymentExport(models.Model):
             return self.scb_service_type_bahtnet
         return self.scb_service_type
 
-    def _get_address(self, pe_line):
+    def _get_address(self, object_address, max_length):
         if self.scb_product_code == "BNT":
-            receiver_address = (
-                pe_line.payment_partner_id.street3 or "**street3 is not data**"
-            )
+            receiver_address = object_address.street3 or "**street3 is not data**"
         else:
             receiver_address = " ".join(
                 [
-                    pe_line.payment_partner_id.street or "",
-                    pe_line.payment_partner_id.street2 or "",
-                    pe_line.payment_partner_id.city or "",
-                    pe_line.payment_partner_id.zip or "",
+                    object_address.street or "",
+                    object_address.street2 or "",
+                    object_address.city or "",
+                    object_address.zip or "",
                 ]
             )
 
@@ -560,9 +925,9 @@ class BankPaymentExport(models.Model):
             while len(lines) < 3:
                 lines.append("".ljust(desired_length))
 
-        result = split_thai_string(receiver_address, 70)
-        padded_result = pad_lines(result, 70)
-        ensure_three_lines(padded_result, 70)
+        result = split_thai_string(receiver_address, max_length)
+        padded_result = pad_lines(result, max_length)
+        ensure_three_lines(padded_result, max_length)
 
         return "".join(padded_result)
 
@@ -597,8 +962,8 @@ class BankPaymentExport(models.Model):
         branch_code = "0{}".format(sanitize_account_bank_payment[0:3])
         text = (
             "002{product_code}{value_date}{debit_account_no}{account_type_debit_account}"
-            "{debit_branch_code}THB{debit_amount}{internal_ref}{no_credit}{fee_debit_account}"
-            "{filler}{mcl_type}{account_type_fee}{debit_branch_code_fee}\r\n".format(
+            "{debit_branch_code}THB{debit_amount}{internal_ref}{no_credit}{debit_fee_account}"
+            "{filler}{mcl_type}{account_type_fee}{debit_fee_branch_code}\r\n".format(
                 product_code=self.scb_product_code,
                 value_date=self.effective_date.strftime("%Y%m%d"),
                 debit_account_no=sanitize_account_bank_payment.ljust(25),
@@ -607,11 +972,11 @@ class BankPaymentExport(models.Model):
                 debit_amount=total_batch_amount,
                 internal_ref=self._get_reference_line().ljust(8),
                 no_credit=str(self._get_line_count()).zfill(6),
-                fee_debit_account=sanitize_account_bank_payment.ljust(15),
+                debit_fee_account=sanitize_account_bank_payment.ljust(15),
                 filler="".ljust(9),
                 mcl_type=self._get_mcl_type(),
                 account_type_fee=account_type.zfill(2),
-                debit_branch_code_fee=branch_code.zfill(4),
+                debit_fee_branch_code=branch_code.zfill(4),
             )
         )
         return text
@@ -677,7 +1042,7 @@ class BankPaymentExport(models.Model):
         # Cheque is not select Recipient
         if self.scb_product_code in ["MCP", "CCP", "DDP", "XMQ", "XDQ"]:
             receiver_name = pe_line.payment_partner_id.name
-        address = self._get_address(pe_line)
+        address = self._get_address(pe_line.payment_partner_id, 70)
         text = (
             "004{internal_ref}{idx}{payee_idcard}{payee_name}"
             "{payee_address}{payee_tax_id}{payee_name_eng}{payee_fax}{payee_sms}"
@@ -699,8 +1064,8 @@ class BankPaymentExport(models.Model):
         return text
 
     def _get_text_wht_detail_scb(self, idx, sequence_wht, wht_line):
-        wht_amount = self._get_amount_no_decimal(wht_line.amount)
-        wht_base_amount = self._get_amount_no_decimal(wht_line.base)
+        wht_amount = self._get_amount_no_decimal(wht_line.amount, 16)
+        wht_base_amount = self._get_amount_no_decimal(wht_line.base, 16)
         wht_income_type = self._get_wht_income_type(wht_line)
         text = (
             "005{internal_ref}{idx}{wht_sequence}{wht_amount}"
@@ -719,8 +1084,8 @@ class BankPaymentExport(models.Model):
         return text
 
     def _get_text_invoice_detail_scb(self, idx, sequence_inv, inv):
-        inv_amount_untaxed = self._get_amount_no_decimal(inv.amount_untaxed)
-        inv_amount_tax = self._get_amount_no_decimal(inv.amount_tax)
+        inv_amount_untaxed = self._get_amount_no_decimal(inv.amount_untaxed, 16)
+        inv_amount_tax = self._get_amount_no_decimal(inv.amount_tax, 16)
         purchase = inv.invoice_line_ids.mapped("purchase_line_id.order_id")
         text = (
             "006{internal_ref}{idx}{inv_sequence}{inv_number}{inv_amount}"
@@ -750,45 +1115,151 @@ class BankPaymentExport(models.Model):
         )
         return text
 
+    def _get_text_outward_remittance(self, payment_lines):
+        self.ensure_one()
+        account_bank_payment = payment_lines[
+            0
+        ].payment_journal_id.bank_account_id.acc_number
+        sanitize_account_bank_payment = sanitize_account_number(account_bank_payment)
+        formatted_string = f"{self.scb_rate:.7f}"
+        integer_part, decimal_part = formatted_string.split(".")
+        # Ensure the integer part has exactly three digits
+        integer_part = integer_part.zfill(3)
+        rate = f"{integer_part}.{decimal_part}"
+        # Total Amount must have lenght 17 and digits at least 2
+        total_amount = str(self.total_amount).zfill(17)
+        integer_part_total, decimal_part_total = str(self.total_amount).split(".")
+        if len(decimal_part_total) < 2:
+            decimal_part_total = decimal_part_total.zfill(2)
+        total_amount = f"{integer_part_total}.{decimal_part_total}".zfill(17)
+        partner_bank_id = payment_lines[0].payment_partner_bank_id
+        # Get Receiver information
+        receiver_name = (
+            partner_bank_id.acc_holder_name or partner_bank_id.partner_id.display_name
+        )
+        receiver_acc_number = sanitize_account_number(partner_bank_id.acc_number)
+        receiver_address = self._get_address(payment_lines[0].payment_partner_id, 35)
+        # Get bank information
+        bank_name = partner_bank_id.bank_id.name
+        bank_address = self._get_address(partner_bank_id.bank_id, 35)
+        execution_date = (
+            self.scb_execution_date
+            and self.scb_execution_date.strftime("%Y%m%d")
+            or "".ljust(8)
+        )
+        intermediary_bank_address = self._get_address(self.scb_intermediary_bank_id, 35)
+
+        text = (
+            "{transaction_number}{batch_reference}{corp_id}{for_id}{value_date}"
+            "{debit_account_no}{debit_fee_account}{rate_type}{contract_ref_no}{rate}"
+            "{credit_currency}{credit_amount}{beneficiary_name}{beneficiary_address}"
+            "{beneficiary_account}{beneficiary_bank_name}{beneficiary_bank_address}"
+            "{charge_flag}{objective_code}{objective_description}{payment_details}"
+            "{document_support}{document_other}{commodity_code}{customer_reference1}"
+            "{customer_reference2}{filler}{pre_advice}{beneficiary_email}"
+            "{execution_date}{intermediary_bank_account}{intermediary_bank_name}"
+            "{intermediary_bank_address}{additional_instruction}{debit_amount}"
+            "{debit_account_addons}{filler2}".format(
+                transaction_number="000001",  # TODO
+                batch_reference=self._get_reference().ljust(32),
+                corp_id="".ljust(12),  # TODO
+                for_id="".ljust(20),  # TODO
+                value_date=self.effective_date.strftime("%Y%m%d"),
+                debit_account_no=(sanitize_account_bank_payment or "").ljust(35),
+                debit_fee_account=(sanitize_account_bank_payment or "").ljust(35),
+                rate_type=self.scb_rate_type,
+                contract_ref_no=(self.scb_contract_ref_no or "").ljust(20),
+                rate=rate,
+                credit_currency=payment_lines[0].currency_id.name,
+                credit_amount=total_amount,
+                beneficiary_name=receiver_name.ljust(35),
+                beneficiary_address=receiver_address,
+                beneficiary_account=receiver_acc_number.ljust(34),
+                beneficiary_bank_name=bank_name[:35].ljust(35),
+                beneficiary_bank_address=bank_address,
+                charge_flag=self.scb_charge_flag,
+                objective_code=self.scb_objective_code,
+                objective_description=(self.scb_objective_description or "").ljust(100),
+                payment_details="".ljust(140),  # TODO
+                document_support=self.scb_document_support,
+                document_other=(self.scb_document_other or "").ljust(35),
+                commodity_code=(self.scb_commodity_code or "").ljust(6),
+                customer_reference1=(self.scb_customer_ref1 or "").ljust(32),
+                customer_reference2=(self.scb_customer_ref2 or "").ljust(32),
+                filler="".ljust(220),  # 870-1089
+                pre_advice=self.scb_pre_advice and "Y" or "N",
+                beneficiary_email=(payment_lines[0].scb_beneficiary_email or "").ljust(
+                    200
+                ),
+                execution_date=execution_date,
+                intermediary_bank_account=(
+                    self.scb_intermediary_bank_account_number or ""
+                ).ljust(34),
+                intermediary_bank_name=(
+                    self.scb_intermediary_bank_id.bic
+                    or self.scb_intermediary_bank_id.name
+                    or ""
+                ).ljust(35),
+                intermediary_bank_address=intermediary_bank_address,
+                additional_instruction=(self.scb_additional_instruction or "").ljust(
+                    350
+                ),
+                debit_amount=total_amount,
+                debit_account_addons="".ljust(156),  # NOTE: not support
+                filler2="".ljust(505),  # NOTE: Include Beneficiary Fullname
+            )
+        )
+        return text
+
     def _format_scb_text(self):
         self.ensure_one()
         payment_lines = self.export_line_ids
-        # Header
-        text = self._get_text_header_scb()
-        total_batch_amount = self._get_amount_no_decimal(self.total_amount)
-        text += self._get_text_company_detail_scb(payment_lines, total_batch_amount)
-        # Check module install 'l10n_th_account_tax'
-        wht = hasattr(self.env["account.payment"], "wht_cert_ids")
-        # Details
-        for idx, pe_line in enumerate(payment_lines):
-            idx += 1
-            # This amount related decimal from invoice, Odoo invoice do not rounding.
-            payment_net_amount = pe_line._get_payment_net_amount()
-            line_batch_amount = pe_line._get_amount_no_decimal(payment_net_amount)
-            wht_cert = (
-                wht
-                and pe_line.payment_id.wht_cert_ids.filtered(
-                    lambda l: l.state == "done"
+        # Outward Remittance
+        if self.scb_outward_remittance:
+            text = self._get_text_outward_remittance(payment_lines)
+        else:
+            # Header
+            text = self._get_text_header_scb()
+            total_batch_amount = self._get_amount_no_decimal(self.total_amount, 16)
+            text += self._get_text_company_detail_scb(payment_lines, total_batch_amount)
+            # Check module install 'l10n_th_account_tax'
+            wht = hasattr(self.env["account.payment"], "wht_cert_ids")
+            # Details
+            for idx, pe_line in enumerate(payment_lines):
+                idx += 1
+                # This amount related decimal from invoice, Odoo invoice do not rounding.
+                payment_net_amount = pe_line._get_payment_net_amount()
+                line_batch_amount = pe_line._get_amount_no_decimal(
+                    payment_net_amount, 16
                 )
-                or False
-            )
-            invoices = pe_line.payment_id.reconciled_bill_ids
-            text += self._get_text_credit_detail_scb(
-                idx, pe_line, line_batch_amount, wht_cert, invoices
-            )
-            text += self._get_text_payee_detail_scb(idx, pe_line, line_batch_amount)
-            # Print WHT from bank
-            if self.scb_is_wht_present and wht_cert:
-                # Get withholding tax from payment state done only
-                for sequence_wht, wht_line in enumerate(wht_cert.wht_line):
-                    sequence_wht += 1
-                    text += self._get_text_wht_detail_scb(idx, sequence_wht, wht_line)
-            # Print Invoices from bank
-            if self.scb_is_invoice_present:
-                for sequence_inv, inv in enumerate(invoices):
-                    sequence_inv += 1
-                    text += self._get_text_invoice_detail_scb(idx, sequence_inv, inv)
-        text += self._get_text_footer_scb(payment_lines, total_batch_amount)
+                wht_cert = (
+                    wht
+                    and pe_line.payment_id.wht_cert_ids.filtered(
+                        lambda l: l.state == "done"
+                    )
+                    or False
+                )
+                invoices = pe_line.payment_id.reconciled_bill_ids
+                text += self._get_text_credit_detail_scb(
+                    idx, pe_line, line_batch_amount, wht_cert, invoices
+                )
+                text += self._get_text_payee_detail_scb(idx, pe_line, line_batch_amount)
+                # Print WHT from bank
+                if self.scb_is_wht_present and wht_cert:
+                    # Get withholding tax from payment state done only
+                    for sequence_wht, wht_line in enumerate(wht_cert.wht_line):
+                        sequence_wht += 1
+                        text += self._get_text_wht_detail_scb(
+                            idx, sequence_wht, wht_line
+                        )
+                # Print Invoices from bank
+                if self.scb_is_invoice_present:
+                    for sequence_inv, inv in enumerate(invoices):
+                        sequence_inv += 1
+                        text += self._get_text_invoice_detail_scb(
+                            idx, sequence_inv, inv
+                        )
+            text += self._get_text_footer_scb(payment_lines, total_batch_amount)
         return text
 
     def _generate_bank_payment_text(self):
