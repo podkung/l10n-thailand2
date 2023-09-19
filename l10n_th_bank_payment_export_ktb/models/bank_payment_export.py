@@ -158,7 +158,7 @@ class BankPaymentExport(models.Model):
         ktb_company_id = self.ktb_company_id or "**Company ID on KTB is not config**"
         total_batch = len(payment_lines.ids)
         total_amount = sum(payment_lines.mapped("payment_amount"))
-        total_batch_amount = payment_lines._get_amount_no_decimal(total_amount)
+        total_batch_amount = payment_lines._get_amount_no_decimal(total_amount, 2)
         text = (
             "101{idx}006{total_batch_transaction}{total_batch_amount}"
             "{effective_date}C{receiver_no}{ktb_company_id}{space}\r\n".format(
@@ -242,7 +242,9 @@ class BankPaymentExport(models.Model):
         for idx, pe_line in enumerate(payment_lines):
             # This amount related decimal from invoice, Odoo invoice do not rounding.
             payment_net_amount = pe_line._get_payment_net_amount()
-            payment_net_amount_bank = pe_line._get_amount_no_decimal(payment_net_amount)
+            payment_net_amount_bank = pe_line._get_amount_no_decimal(
+                payment_net_amount, 2
+            )
             text += self._get_text_body_ktb(idx, pe_line, payment_net_amount_bank)
             total_amount += payment_net_amount_bank
         return text
@@ -331,6 +333,12 @@ class BankPaymentExport(models.Model):
                     _(
                         "You can export bank payments with journal 'Bank' "
                         "and Payment method 'Manual' only"
+                    )
+                )
+            if payment.company_id.currency_id != payment.currency_id:
+                raise UserError(
+                    _("Payments must be currency '{}' only").format(
+                        payment.company_id.currency_id.name
                     )
                 )
         return res

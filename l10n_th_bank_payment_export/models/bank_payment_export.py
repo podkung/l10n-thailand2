@@ -49,6 +49,7 @@ class BankPaymentExport(models.Model):
     currency_id = fields.Many2one(
         comodel_name="res.currency",
         default=lambda self: self.env.user.company_id.currency_id,
+        required=True,
     )
     total_amount = fields.Monetary(
         compute="_compute_total_amount",
@@ -120,7 +121,7 @@ class BankPaymentExport(models.Model):
             ("export_status", "=", "draft"),
             ("state", "=", "posted"),
             ("payment_method_id", "=", method_manual_out.id),
-            ("currency_id", "=", self.env.company.currency_id.id),
+            ("currency_id", "=", self.currency_id.id),
             ("journal_id.type", "=", "bank"),
         ]
         return domain
@@ -224,11 +225,12 @@ class BankPaymentExport(models.Model):
                 "default_template_id": payments[0].bank_payment_template_id.id,
                 "default_bank": payment_bank,
                 "default_export_line_ids": export_lines,
+                "default_currency_id": payments[0].currency_id.id,
             }
         )
         return ctx
 
-    def _get_amount_no_decimal(self, amount):
+    def _get_amount_no_decimal(self, amount, digits=False):
         """Implementation is available"""
         return amount
 
@@ -258,6 +260,7 @@ class BankPaymentExport(models.Model):
 
     def _check_constraint_create_bank_payment_export(self, payments):
         comment_template = payments[0].bank_payment_template_id
+        previous_currency = False
         for payment in payments:
             if payment.bank_payment_template_id != comment_template:
                 raise UserError(
@@ -267,12 +270,9 @@ class BankPaymentExport(models.Model):
                 raise UserError(_("Payments have been already exported."))
             if payment.state != "posted":
                 raise UserError(_("You can export bank payments state 'posted' only"))
-            if payment.company_id.currency_id != payment.currency_id:
-                raise UserError(
-                    _("Payments must be currency '{}' only").format(
-                        payment.company_id.currency_id.name
-                    )
-                )
+            if previous_currency and payment.currency_id != previous_currency:
+                raise UserError(_("You can export bank payments with 1 currency only."))
+            previous_currency = payment.currency_id
 
     @api.model
     def action_create_bank_payment_export(self):
