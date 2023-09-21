@@ -1,6 +1,8 @@
 # Copyright 2023 Ecosoft Co., Ltd. (http://ecosoft.co.th)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from decimal import Decimal
+
 from datetime import datetime
 
 from odoo import _, api, fields, models
@@ -818,7 +820,7 @@ class BankPaymentExport(models.Model):
 
     def _get_amount_no_decimal(self, amount, digits=False):
         if self.bank == "SICOTHBK":
-            return str(int(amount * 1000)).zfill(digits)
+            return str(int(Decimal(str(amount)) * 1000)).zfill(digits)
         return super()._get_amount_no_decimal(amount, digits)
 
     def _get_reference(self):
