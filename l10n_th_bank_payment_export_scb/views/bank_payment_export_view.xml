@@ -232,7 +232,15 @@
             >
                 <field
                     name="scb_company_id"
-                    attrs="{'invisible': [('scb_is_editable', '!=', True)], 'required': [('scb_is_editable', '!=', False)]}"
+                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_outward_remittance', '!=', False)], 'required': [('scb_is_editable', '!=', False), ('scb_outward_remittance', '=', False)]}"
+                />
+                <field
+                    name="scb_corp_id"
+                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_outward_remittance', '=', False)], 'required': [('scb_is_editable', '!=', False), ('scb_outward_remittance', '!=', False)]}"
+                />
+                <field
+                    name="scb_for_id"
+                    attrs="{'invisible': ['|', ('scb_is_editable', '!=', True), ('scb_outward_remittance', '=', False)], 'required': [('scb_is_editable', '!=', False), ('scb_outward_remittance', '!=', False)]}"
                 />
             </xpath>
         </field>

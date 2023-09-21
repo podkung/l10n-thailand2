@@ -18,8 +18,26 @@ class BankPaymentExport(models.Model):
     )
     scb_company_id = fields.Char(
         string="SCB Company ID",
+        size=12,
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
+    )
+    scb_corp_id = fields.Char(
+        string="Corp ID",
+        size=12,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+        help="Corp ID บน Buisness Net",
+    )
+    scb_for_id = fields.Char(
+        string="FOR ID",
+        size=20,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+        help="Unigue Cust ID บนระบบเงินโอนของ SCB",
     )
     # filter
     scb_is_editable = fields.Boolean(
@@ -376,6 +394,7 @@ class BankPaymentExport(models.Model):
     )
     scb_intermediary_bank_account_number = fields.Char(
         string="Intermediary Bank Account Number",
+        size=34,
         tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
@@ -420,6 +439,7 @@ class BankPaymentExport(models.Model):
             "XMQ": "cascade",
             "XDQ": "cascade",
         },
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -436,6 +456,7 @@ class BankPaymentExport(models.Model):
             "P": "cascade",
             "S": "cascade",
         },
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -468,6 +489,7 @@ class BankPaymentExport(models.Model):
             "C011": "cascade",
             "C012": "cascade",
         },
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -510,6 +532,7 @@ class BankPaymentExport(models.Model):
             "0101": "cascade",
             "0527": "cascade",
         },
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -534,6 +557,7 @@ class BankPaymentExport(models.Model):
             "07": "cascade",
             "59": "cascade",
         },
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -590,6 +614,7 @@ class BankPaymentExport(models.Model):
             "22": "cascade",
             "23": "cascade",
         },
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -600,6 +625,7 @@ class BankPaymentExport(models.Model):
             "E": "cascade",
         },
         default="T",
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -622,6 +648,7 @@ class BankPaymentExport(models.Model):
             "C": "cascade",
         },
         default="B",
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
@@ -715,10 +742,17 @@ class BankPaymentExport(models.Model):
             "Y": "cascade",
             "Z": "cascade",
         },
+        tracking=True,
         readonly=True,
         states={"draft": [("readonly", False)]},
     )
-    scb_remark = fields.Char(size=50)
+    scb_remark = fields.Char(
+        string="Remark",
+        size=50,
+        tracking=True,
+        readonly=True,
+        states={"draft": [("readonly", False)]},
+    )
     scb_payment_type_code = fields.Selection(
         selection=[
             ("CSH", "CSH - Cash"),
@@ -1162,8 +1196,8 @@ class BankPaymentExport(models.Model):
             "{debit_account_addons}{filler2}".format(
                 transaction_number="000001",  # TODO
                 batch_reference=self._get_reference().ljust(32),
-                corp_id="".ljust(12),  # TODO
-                for_id="".ljust(20),  # TODO
+                corp_id=(self.scb_corp_id or "").ljust(12),
+                for_id=(self.scb_for_id or "").ljust(20),
                 value_date=self.effective_date.strftime("%Y%m%d"),
                 debit_account_no=(sanitize_account_bank_payment or "").ljust(35),
                 debit_fee_account=(sanitize_account_bank_payment or "").ljust(35),
